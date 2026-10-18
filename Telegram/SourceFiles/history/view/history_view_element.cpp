@@ -1942,7 +1942,7 @@ auto Element::contextDependentServiceText() -> TextWithLinks {
 	}
 	const auto from = item->from();
 	const auto topicUrl = UrlClickHandler::EncodeInternalWrappedUrl(
-		u"https://t.me/c/%1/%2"_q
+		u"https://darkmoon.cc/c/%1/%2"_q
 			.arg(peerToChannel(peerId).bare)
 			.arg(topicRootId.bare));
 	const auto fromLink = [&](int index) {

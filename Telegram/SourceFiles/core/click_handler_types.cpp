@@ -124,10 +124,8 @@ constexpr auto kReminderSetToastDuration = 4 * crl::time(1000);
 
 [[nodiscard]] std::vector<QString> DefaultWhitelistedDomains() {
 	return {
-		u"telegram.dog"_q,
-		u"telegram.me"_q,
+		u"darkmoon.cc"_q,
 		u"telegram.org"_q,
-		u"t.me"_q,
 		u"telegra.ph"_q,
 		u"te.legra.ph"_q,
 		u"graph.org"_q,
@@ -185,7 +183,7 @@ constexpr auto kReminderSetToastDuration = 4 * crl::time(1000);
 	using namespace qthelp;
 
 	return regex_match(
-		"(^|\\.)(telegram\\.(me|dog)|t\\.me)$",
+		"(^|\\.)darkmoon\\.cc$",
 		url.host(),
 		RegExOption::CaseInsensitive).valid();
 }

@@ -1981,6 +1981,9 @@ QString TryConvertUrlToLocal(QString url) {
 	if (url.size() > 8192) {
 		url = url.mid(0, 8192);
 	}
+	if (url.startsWith(u"dm://"_q, Qt::CaseInsensitive)) {
+		url = u"tg://"_q + url.mid(5);
+	}
 	if (url.startsWith(u"tc://"_q, Qt::CaseInsensitive)) {
 		const auto query = url.indexOf('?');
 		return u"tg://sendgrams?startapp="_q
@@ -1997,13 +2000,13 @@ QString TryConvertUrlToLocal(QString url) {
 		const auto protocol = tonsiteMatch->captured(1);
 		return u"tonsite://"_q + url.mid(protocol.size());
 	}
-	auto subdomainMatch = regex_match(u"^(https?://)?([a-zA-Z0-9\\_]+)\\.t\\.me(/\\d+)?/?(\\?.+)?"_q, url, matchOptions);
+	auto subdomainMatch = regex_match(u"^(https?://)?([a-zA-Z0-9\\_]+)\\.darkmoon\\.cc(/\\d+)?/?(\\?.+)?"_q, url, matchOptions);
 	if (subdomainMatch) {
 		const auto name = subdomainMatch->captured(2);
 		if (name.size() > 1 && name != "www") {
 			const auto result = TryConvertUrlToLocal(
 				subdomainMatch->captured(1)
-				+ "t.me/"
+				+ "darkmoon.cc/"
 				+ name
 				+ subdomainMatch->captured(3)
 				+ subdomainMatch->captured(4));
@@ -2012,9 +2015,9 @@ QString TryConvertUrlToLocal(QString url) {
 				: url;
 		}
 	}
-	auto telegramMeMatch = regex_match(u"^(https?://)?(www\\.)?(telegram\\.(me|dog)|t\\.me)/(.+)$"_q, url, matchOptions);
+	auto telegramMeMatch = regex_match(u"^(https?://)?(www\\.)?(darkmoon\\.cc)/(.+)$"_q, url, matchOptions);
 	if (telegramMeMatch) {
-		const auto query = telegramMeMatch->capturedView(5);
+		const auto query = telegramMeMatch->capturedView(4);
 		if (const auto phoneMatch = regex_match(u"^\\+([0-9]+)(\\?|$)"_q, query, matchOptions)) {
 			const auto params = query.mid(phoneMatch->captured(0).size()).toString();
 			return u"tg://resolve?phone="_q + phoneMatch->captured(1) + (params.isEmpty() ? QString() : '&' + params);

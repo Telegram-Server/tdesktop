@@ -97,7 +97,7 @@ struct TopButtonMenuState {
 [[nodiscard]] std::vector<QString> ExtractLinkCandidates(const QString &input) {
 	auto urls = std::vector<QString>();
 	static const auto urlRegex = QRegularExpression(
-		R"((?:https?:\/\/[^\s]+|tg:\/\/[^\s]+|(?:www\.)?(?:t\.me|telegram\.me|telegram\.dog)\/[^\s]+))",
+		R"((?:https?:\/\/[^\s]+|(?:tg|dm):\/\/[^\s]+|(?:www\.)?darkmoon\.cc\/[^\s]+))",
 		QRegularExpression::CaseInsensitiveOption);
 
 	auto it = urlRegex.globalMatch(input);
