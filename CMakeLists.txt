@@ -54,6 +54,7 @@ include(cmake/nuget.cmake)
 include(cmake/validate_d3d_compiler.cmake)
 include(cmake/target_prepare_qrc.cmake)
 
+set(DESKTOP_APP_DISABLE_CRASH_REPORTS ON CACHE BOOL "Disable crash reports." FORCE)
 include(cmake/options.cmake)
 include(cmake/external/qt/package.cmake)
 
