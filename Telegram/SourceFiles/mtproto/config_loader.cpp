@@ -116,14 +116,8 @@ void ConfigLoader::enumerate() {
 }
 
 void ConfigLoader::refreshSpecialLoader() {
-	if (_proxyEnabled || _instance->isKeysDestroyer()) {
-		_specialLoader.reset();
-		return;
-	}
-	if (!_specialLoader
-		|| (!_specialEnumRequest && _specialEndpoints.empty())) {
-		createSpecialLoader();
-	}
+	// DarkMoon: no DNS-over-HTTPS / Firebase fallback config requests.
+	_specialLoader.reset();
 }
 
 void ConfigLoader::setPhone(const QString &phone) {

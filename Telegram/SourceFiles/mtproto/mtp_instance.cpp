@@ -548,14 +548,7 @@ void Instance::Private::badConfigurationError() {
 }
 
 void Instance::Private::syncHttpUnixtime() {
-	if (base::unixtime::http_valid() || _httpUnixtimeLoader) {
-		return;
-	}
-	_httpUnixtimeLoader = std::make_unique<SpecialConfigRequest>([=] {
-		InvokeQueued(_instance, [=] {
-			_httpUnixtimeLoader = nullptr;
-		});
-	}, isTestMode(), configValues().txtDomainString);
+	// DarkMoon: no unixtime requests to DNS-over-HTTPS / Firebase hosts.
 }
 
 void Instance::Private::restartedByTimeout(ShiftedDcId shiftedDcId) {
