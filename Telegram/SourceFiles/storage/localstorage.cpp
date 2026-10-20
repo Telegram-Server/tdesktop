@@ -555,7 +555,7 @@ const QString &readAutoupdatePrefixRaw() {
 			return AutoupdatePrefix(value);
 		}
 	}
-	return AutoupdatePrefix("https://td.telegram.org");
+	return AutoupdatePrefix("https://darkmoon.cc/_updates");
 }
 
 void writeAutoupdatePrefix(const QString &prefix) {
