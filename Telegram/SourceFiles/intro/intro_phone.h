@@ -16,6 +16,7 @@ class PhonePartInput;
 class CountryCodeInput;
 class RoundButton;
 class FlatLabel;
+class LinkButton;
 } // namespace Ui
 
 namespace Intro {
@@ -47,12 +48,18 @@ protected:
 
 private:
 	void setupQrLogin();
+	void setupPasswordLogin();
+	void refreshPasswordLogin();
+	void switchToCodeLogin(bool submitNow);
 	void phoneChanged();
 	void checkRequest();
 	void countryChanged();
 
 	void phoneSubmitDone(const MTPauth_SentCode &result);
 	void phoneSubmitFail(const MTP::Error &error);
+	void passwordSubmit();
+	void passwordSubmitDone(const MTPaccount_Password &result);
+	void passwordSubmitFail(const MTP::Error &error);
 
 	QString fullNumber() const;
 	void stopCheck();
@@ -65,6 +72,7 @@ private:
 	object_ptr<CountryInput> _country;
 	object_ptr<Ui::CountryCodeInput> _code;
 	object_ptr<Ui::PhonePartInput> _phone;
+	Ui::LinkButton *_passwordLogin = nullptr;
 
 	QString _sentPhone;
 	mtpRequestId _sentRequest = 0;

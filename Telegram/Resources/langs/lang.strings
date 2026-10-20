@@ -417,6 +417,15 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_phone_title" = "Your Phone Number";
 "lng_phone_desc" = "Please confirm your country code\nand enter your phone number.";
 "lng_phone_to_qr" = "Quick log in using QR code";
+"lng_phone_to_password" = "Log in with password";
+"lng_phone_to_code" = "Log in with code";
+"lng_phone_password_desc" = "Enter your phone number to log in\nor sign up with a password.";
+"lng_phone_password_not_set" = "This account doesn't have a login password yet. Log in with a code instead?";
+"lng_phone_password_unavailable" = "Password login is not available on this server.";
+"lng_signup_closed" = "Sign-up is closed on this server, please contact the administrator.";
+"lng_login_password_desc" = "Please enter the login password\nof this account.";
+"lng_login_password_field" = "Login password";
+"lng_login_password_to_code" = "Log in with a code instead";
 "lng_country_code" = "Country Code";
 "lng_bad_country_code" = "Invalid Country Code";
 "lng_country_ph" = "Search";

@@ -72,6 +72,15 @@ struct Data {
 
 	Core::CloudPasswordState pwdState;
 
+	// telesrv login password, see telesrv.tl.
+	bool passwordLogin = false;
+	bool passwordLoginCodeRequested = false;
+	QString passwordLoginPhone; // Every call repeats the same string.
+	Core::CloudPasswordState passwordLoginState;
+	bool passwordSignup = false;
+	Core::CloudPasswordAlgo passwordSignupAlgo;
+	bytes::vector passwordSignupHash;
+
 	Window::TermsLock termsLock;
 
 	rpl::event_stream<> updated;

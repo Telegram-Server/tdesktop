@@ -10,7 +10,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_keys.h"
 #include "intro/intro_code.h"
 #include "intro/intro_email.h"
+#include "intro/intro_login_password.h"
 #include "intro/intro_qr.h"
+#include "intro/intro_widget.h"
+#include "base/random.h"
+#include "core/update_checker.h"
 #include "styles/style_intro.h"
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/labels.h"
@@ -97,6 +101,7 @@ PhoneWidget::PhoneWidget(
 	}, lifetime());
 	setErrorCentered(true);
 	setupQrLogin();
+	setupPasswordLogin();
 
 	if (!_country->chooseCountry(getData()->country)) {
 		_country->chooseCountry(u"US"_q);
@@ -128,6 +133,65 @@ void PhoneWidget::setupQrLogin() {
 	qrLogin->setClickedCallback([=] {
 		goNextOrBack<QrWidget>();
 	});
+}
+
+void PhoneWidget::setupPasswordLogin() {
+	_passwordLogin = Ui::CreateChild<Ui::LinkButton>(
+		this,
+		tr::lng_phone_to_password(tr::now));
+
+	rpl::combine(
+		sizeValue(),
+		_passwordLogin->widthValue()
+	) | rpl::on_next([=](QSize size, int linkWidth) {
+		_passwordLogin->moveToLeft(
+			(size.width() - linkWidth) / 2,
+			contentTop() + st::introPasswordLoginLinkTop);
+	}, _passwordLogin->lifetime());
+
+	_passwordLogin->setClickedCallback([=] {
+		getData()->passwordLogin = !getData()->passwordLogin;
+		refreshPasswordLogin();
+		hidePhoneError();
+		_phone->setFocus();
+	});
+
+	Lang::Updated(
+	) | rpl::on_next([=] {
+		refreshPasswordLogin();
+	}, _passwordLogin->lifetime());
+
+	account().appConfig().value(
+	) | rpl::on_next([=] {
+		refreshPasswordLogin();
+	}, _passwordLogin->lifetime());
+}
+
+void PhoneWidget::refreshPasswordLogin() {
+	const auto available = account().appConfig().passwordLoginAvailable();
+	if (!available) {
+		getData()->passwordLogin = false;
+	}
+	const auto password = getData()->passwordLogin;
+	_passwordLogin->setText(password
+		? tr::lng_phone_to_code(tr::now)
+		: tr::lng_phone_to_password(tr::now));
+	setDescriptionText(password
+		? tr::lng_phone_password_desc()
+		: tr::lng_phone_desc());
+	if (!available) {
+		_passwordLogin->hide();
+	} else if (!animating()) {
+		_passwordLogin->show();
+	}
+}
+
+void PhoneWidget::switchToCodeLogin(bool submitNow) {
+	getData()->passwordLogin = false;
+	refreshPasswordLogin();
+	if (submitNow) {
+		submit();
+	}
 }
 
 void PhoneWidget::resizeEvent(QResizeEvent *e) {
@@ -203,6 +267,10 @@ void PhoneWidget::submit() {
 
 	_sentPhone = phone;
 	api().instance().setUserPhone(_sentPhone);
+	if (getData()->passwordLogin) {
+		passwordSubmit();
+		return;
+	}
 	_sentRequest = api().request(MTPauth_SendCode(
 		MTP_string(_sentPhone),
 		MTP_int(ApiId),
@@ -240,6 +308,7 @@ void PhoneWidget::phoneSubmitDone(const MTPauth_SentCode &result) {
 	stopCheck();
 	_sentRequest = 0;
 
+	getData()->passwordSignup = false;
 	result.match([&](const MTPDauth_sentCode &data) {
 		fillSentCodeData(data);
 		getData()->phone = DigitsOnly(_sentPhone);
@@ -286,6 +355,89 @@ void PhoneWidget::phoneSubmitFail(const MTP::Error &error) {
 	}
 }
 
+void PhoneWidget::passwordSubmit() {
+	_sentRequest = api().request(MTPtelesrv_GetLoginPassword(
+		MTP_flags(0),
+		MTP_string(_sentPhone)
+	)).done([=](const MTPaccount_Password &result) {
+		passwordSubmitDone(result);
+	}).fail([=](const MTP::Error &error) {
+		passwordSubmitFail(error);
+	}).handleFloodErrors().send();
+}
+
+void PhoneWidget::passwordSubmitDone(const MTPaccount_Password &result) {
+	stopCheck();
+	_sentRequest = 0;
+
+	const auto &data = result.data();
+	base::RandomAddSeed(bytes::make_span(data.vsecure_random().v));
+	auto state = Core::ParseCloudPasswordState(data);
+	const auto supported = state.hasPassword
+		? bool(state.mtp.request)
+		: !v::is_null(state.mtp.newPassword);
+	if (!supported) {
+		const auto callback = [=](Fn<void()> &&close) {
+			Core::UpdateApplication();
+			close();
+		};
+		Ui::show(Ui::MakeConfirmBox({
+			.text = tr::lng_passport_app_out_of_date(),
+			.confirmed = callback,
+			.confirmText = tr::lng_menu_update(),
+		}));
+		return;
+	}
+
+	getData()->phone = DigitsOnly(_sentPhone);
+	getData()->phoneHash = QByteArray();
+	getData()->termsLock = Window::TermsLock();
+	getData()->passwordLoginPhone = _sentPhone;
+	getData()->passwordSignup = false;
+	const auto hasPassword = state.hasPassword;
+	getData()->passwordLoginState = std::move(state);
+	if (hasPassword) {
+		goNext<LoginPasswordWidget>();
+	} else {
+		// No account has this number yet, sign it up with a code.
+		switchToCodeLogin(true);
+	}
+}
+
+void PhoneWidget::passwordSubmitFail(const MTP::Error &error) {
+	stopCheck();
+	_sentRequest = 0;
+	if (MTP::IsFloodError(error)) {
+		showPhoneError(tr::lng_flood_error());
+		return;
+	}
+
+	const auto &err = error.type();
+	if (err == u"PASSWORD_LOGIN_NOT_SET"_q) {
+		const auto confirmed = crl::guard(this, [=](Fn<void()> &&close) {
+			close();
+			switchToCodeLogin(true);
+		});
+		Ui::show(Ui::MakeConfirmBox({
+			.text = tr::lng_phone_password_not_set(),
+			.confirmed = confirmed,
+			.confirmText = tr::lng_phone_to_code(),
+		}));
+	} else if (err == u"SIGN_UP_DISABLED"_q) {
+		showPhoneError(tr::lng_signup_closed());
+	} else if (err == u"PASSWORD_LOGIN_DISABLED"_q) {
+		account().appConfig().refresh();
+		switchToCodeLogin(false);
+		showPhoneError(tr::lng_phone_password_unavailable());
+	} else if (err == u"PHONE_NUMBER_INVALID"_q) {
+		showPhoneError(tr::lng_bad_phone());
+	} else if (err == u"PHONE_NUMBER_BANNED"_q) {
+		Ui::ShowPhoneBannedError(getData()->controller, _sentPhone);
+	} else if (!MTP::IgnoreError(error)) {
+		showPhoneError(rpl::single(err));
+	}
+}
+
 QString PhoneWidget::fullNumber() const {
 	return _code->getLastText() + _phone->getLastText();
 }
@@ -301,7 +453,11 @@ void PhoneWidget::setInnerFocus() {
 void PhoneWidget::activate() {
 	Step::activate();
 	showChildren();
+	refreshPasswordLogin();
 	setInnerFocus();
+	if (base::take(getData()->passwordLoginCodeRequested)) {
+		switchToCodeLogin(true);
+	}
 }
 
 void PhoneWidget::finished() {
