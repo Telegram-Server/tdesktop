@@ -177,6 +177,7 @@ void Step::finish(const MTPauth_Authorization &auth, QImage &&photo) {
 		} else {
 			getData()->termsLock = Window::TermsLock();
 		}
+		getData()->passwordSignup = false;
 		goReplace<SignupWidget>(Animate::Forward);
 	});
 }

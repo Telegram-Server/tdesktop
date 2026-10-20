@@ -426,6 +426,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_login_password_desc" = "Please enter the login password\nof this account.";
 "lng_login_password_field" = "Login password";
 "lng_login_password_to_code" = "Log in with a code instead";
+"lng_signup_password_title" = "Create a Password";
+"lng_signup_password_desc" = "Choose a password to log in\nwith this phone number.";
+"lng_signup_password_field" = "Password";
+"lng_signup_password_repeat" = "Re-enter password";
+"lng_signup_password_occupied" = "This number has just been registered. Go back and log in.";
 "lng_country_code" = "Country Code";
 "lng_bad_country_code" = "Invalid Country Code";
 "lng_country_ph" = "Search";

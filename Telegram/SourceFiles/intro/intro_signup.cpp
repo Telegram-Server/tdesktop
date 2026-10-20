@@ -61,6 +61,11 @@ SignupWidget::SignupWidget(
 	setMouseTracking(true);
 }
 
+bool SignupWidget::hasBack() const {
+	// After choosing a login password the user may go back to change it.
+	return getData()->passwordSignup;
+}
+
 void SignupWidget::finishInit() {
 	showTerms();
 }
@@ -133,6 +138,18 @@ void SignupWidget::nameSubmitFail(const MTP::Error &error) {
 	}
 
 	const auto &err = error.type();
+	if (getData()->passwordSignup) {
+		if (err == u"SIGN_UP_DISABLED"_q) {
+			showError(tr::lng_signup_closed());
+			return;
+		} else if (err == u"PHONE_NUMBER_OCCUPIED"_q) {
+			showError(tr::lng_signup_password_occupied());
+			return;
+		} else if (err == u"PASSWORD_LOGIN_DISABLED"_q) {
+			showError(tr::lng_phone_password_unavailable());
+			return;
+		}
+	}
 	if (err == u"PHONE_NUMBER_FLOOD"_q) {
 		Ui::show(Ui::MakeInformBox(tr::lng_error_phone_flood()));
 	} else if (err == u"PHONE_NUMBER_INVALID"_q
@@ -185,17 +202,11 @@ void SignupWidget::submit() {
 
 		_firstName = _first->getLastText().trimmed();
 		_lastName = _last->getLastText().trimmed();
-		_sentRequest = api().request(MTPauth_SignUp(
-			MTP_flags(0),
-			MTP_string(getData()->phone),
-			MTP_bytes(getData()->phoneHash),
-			MTP_string(_firstName),
-			MTP_string(_lastName)
-		)).done([=](const MTPauth_Authorization &result) {
-			nameSubmitDone(result);
-		}).fail([=](const MTP::Error &error) {
-			nameSubmitFail(error);
-		}).handleFloodErrors().send();
+		if (getData()->passwordSignup) {
+			sendSignUpWithPassword();
+		} else {
+			sendSignUp();
+		}
 	};
 	if (_termsAccepted
 		|| getData()->termsLock.text.text.isEmpty()
@@ -207,6 +218,42 @@ void SignupWidget::submit() {
 			send();
 		}));
 	}
+}
+
+void SignupWidget::sendSignUp() {
+	_sentRequest = api().request(MTPauth_SignUp(
+		MTP_flags(0),
+		MTP_string(getData()->phone),
+		MTP_bytes(getData()->phoneHash),
+		MTP_string(_firstName),
+		MTP_string(_lastName)
+	)).done([=](const MTPauth_Authorization &result) {
+		nameSubmitDone(result);
+	}).fail([=](const MTP::Error &error) {
+		nameSubmitFail(error);
+	}).handleFloodErrors().send();
+}
+
+void SignupWidget::sendSignUpWithPassword() {
+	// No login code: the account is created with its login password.
+	using Flag = MTPDaccount_passwordInputSettings::Flag;
+	_sentRequest = api().request(MTPtelesrv_SignUpWithPassword(
+		MTP_flags(0),
+		MTP_string(getData()->passwordLoginPhone),
+		MTP_string(_firstName),
+		MTP_string(_lastName),
+		MTP_account_passwordInputSettings(
+			MTP_flags(Flag::f_new_algo | Flag::f_new_password_hash),
+			Core::PrepareCloudPasswordAlgo(getData()->passwordSignupAlgo),
+			MTP_bytes(getData()->passwordSignupHash),
+			MTPstring(), // hint
+			MTPstring(), // email
+			MTPSecureSecretSettings())
+	)).done([=](const MTPauth_Authorization &result) {
+		nameSubmitDone(result);
+	}).fail([=](const MTP::Error &error) {
+		nameSubmitFail(error);
+	}).handleFloodErrors().send();
 }
 
 rpl::producer<QString> SignupWidget::nextButtonText() const {

@@ -32,6 +32,8 @@ public:
 	void submit() override;
 	rpl::producer<QString> nextButtonText() const override;
 
+	bool hasBack() const override;
+
 protected:
 	void resizeEvent(QResizeEvent *e) override;
 
@@ -41,6 +43,8 @@ private:
 
 	void nameSubmitDone(const MTPauth_Authorization &result);
 	void nameSubmitFail(const MTP::Error &error);
+	void sendSignUp();
+	void sendSignUpWithPassword();
 
 	object_ptr<Ui::UserpicButton> _photo;
 	object_ptr<Ui::InputField> _first;

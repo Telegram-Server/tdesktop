@@ -12,6 +12,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "intro/intro_email.h"
 #include "intro/intro_login_password.h"
 #include "intro/intro_qr.h"
+#include "intro/intro_signup_password.h"
 #include "intro/intro_widget.h"
 #include "base/random.h"
 #include "core/update_checker.h"
@@ -399,8 +400,7 @@ void PhoneWidget::passwordSubmitDone(const MTPaccount_Password &result) {
 	if (hasPassword) {
 		goNext<LoginPasswordWidget>();
 	} else {
-		// No account has this number yet, sign it up with a code.
-		switchToCodeLogin(true);
+		goNext<SignupPasswordWidget>();
 	}
 }
 
