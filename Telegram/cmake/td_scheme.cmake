@@ -13,6 +13,7 @@ include(cmake/generate_scheme.cmake)
 set(scheme_files
     ${src_loc}/mtproto/scheme/api.tl
     ${src_loc}/mtproto/scheme/mtproto.tl
+    ${src_loc}/mtproto/scheme/telesrv.tl
 )
 
 generate_scheme(td_scheme ${src_loc}/codegen/scheme/codegen_scheme.py "${scheme_files}")
@@ -21,6 +22,7 @@ nice_target_sources(td_scheme ${src_loc}/mtproto/scheme
 PRIVATE
     api.tl
     mtproto.tl
+    telesrv.tl
 )
 
 target_include_directories(td_scheme
