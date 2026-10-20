@@ -310,6 +310,14 @@ bool AppConfig::settingsDisplayPasskeys() const {
 	return get<bool>(u"settings_display_passkeys"_q, false);
 }
 
+bool AppConfig::passwordLoginAvailable() const {
+	return ranges::contains(
+		get<std::vector<QString>>(
+			u"telesrv_features"_q,
+			std::vector<QString>()),
+		u"password_login"_q);
+}
+
 int64 AppConfig::stakeDiceNanoTonMin() const {
 	return get<int64>(u"ton_stakedice_stake_amount_min"_q, 100'000'000LL);
 }

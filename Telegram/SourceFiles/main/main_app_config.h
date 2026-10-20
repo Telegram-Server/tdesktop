@@ -140,6 +140,9 @@ public:
 	[[nodiscard]] int passkeysAccountPasskeysMax() const;
 	[[nodiscard]] bool settingsDisplayPasskeys() const;
 
+	// telesrv extension, see telesrv.tl.
+	[[nodiscard]] bool passwordLoginAvailable() const;
+
 	[[nodiscard]] int64 stakeDiceNanoTonMin() const;
 	[[nodiscard]] int64 stakeDiceNanoTonMax() const;
 	[[nodiscard]] std::vector<int64> stakeDiceNanoTonSuggested() const;
