@@ -6,14 +6,23 @@ name: Windows.
 # here goes through the GitHub cache.
 #
 # Required repository secrets: TG_API_ID, TG_API_HASH.
+# With enable_autoupdate also UPDATE_SIGNING_KEY: the PEM private key of the
+# manifest signing key UPDATE_KEY_ID below (never the update root key).
 
 on:
   workflow_dispatch:
     inputs:
       enable_autoupdate:
-        description: "Enable auto-update (off by default; when on, the client checks the official update sources and accepts official-signed updates)"
+        description: "Enable auto-update and pack a signed update (off by default; needs the UPDATE_SIGNING_KEY secret)"
         type: boolean
         default: false
+      update_channel:
+        description: "Update channel of the packed update (only with auto-update)"
+        type: choice
+        options:
+          - stable
+          - beta
+        default: stable
       enable_lto:
         description: "Enable LTO (on by default; turning it off is slower at this code size)"
         type: boolean
@@ -27,6 +36,9 @@ jobs:
 
     env:
       PREPARE_PATH: "Telegram/build/prepare/prepare.py"
+      # Must match a key that Telegram/Resources/update/manifest.min.json
+      # requires for the chosen channel.
+      UPDATE_KEY_ID: "dm-2026a"
 
     defaults:
       run:
@@ -187,6 +199,7 @@ jobs:
         env:
           TDESKTOP_API_ID: ${{ secrets.TG_API_ID }}
           TDESKTOP_API_HASH: ${{ secrets.TG_API_HASH }}
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           if [ -z "$TDESKTOP_API_ID" ] || [ -z "$TDESKTOP_API_HASH" ]; then
             echo "::error::Set TG_API_ID and TG_API_HASH repository secrets."
@@ -195,10 +208,19 @@ jobs:
           echo "TDESKTOP_BUILD_API=-D TDESKTOP_API_ID=$TDESKTOP_API_ID -D TDESKTOP_API_HASH=$TDESKTOP_API_HASH" >> $GITHUB_ENV
 
           ARTIFACT_NAME="DarkMoon x64"
+          SPECIAL=""
           if [ "${{ inputs.enable_autoupdate }}" = "true" ]; then
-            ARTIFACT_NAME="${ARTIFACT_NAME} autoupdate"
+            # Fail before the long build rather than after it.
+            if [ -z "$UPDATE_SIGNING_KEY" ]; then
+              echo "::error::Set the UPDATE_SIGNING_KEY repository secret to pack an update."
+              exit 1
+            fi
+            ARTIFACT_NAME="${ARTIFACT_NAME} autoupdate ${{ inputs.update_channel }}"
+            # Packer is only built for a special target.
+            SPECIAL="-D DESKTOP_APP_SPECIAL_TARGET=win64"
           fi
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+          echo "TDESKTOP_BUILD_SPECIAL=$SPECIAL" >> $GITHUB_ENV
 
       # Same pruning as upstream canary.yml: tdesktop_rust/out/src/wallet_engine
       # holds the UniFFI-generated wallet_engine.cpp the app compiles, and the
@@ -238,6 +260,23 @@ jobs:
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
           key: ${{ steps.cache-qt.outputs.cache-primary-key }}
 
+      # The Packer target includes packer_private.h at build time, but v2
+      # packing never uses the v1 RSA keys, so random junk is enough (the
+      # same approach as upstream canary.yml).
+      - name: Generate a stub DesktopPrivate.
+        if: inputs.enable_autoupdate
+        shell: bash
+        run: |
+          mkdir -p $TBUILD/DesktopPrivate
+          random_key() {
+            printf -- '-----BEGIN RSA PRIVATE KEY-----\\n%s\\n-----END RSA PRIVATE KEY-----\\n' \
+              "$(head -c 96 /dev/urandom | base64 | tr -d '\n')"
+          }
+          printf 'const char *PrivateKey = "%s";\nconst char *PrivateBetaKey = "%s";\n' \
+            "$(random_key)" "$(random_key)" > $TBUILD/DesktopPrivate/packer_private.h
+          printf 'static const char *AlphaPrivateKey = "%s";\n' \
+            "$(random_key)" > $TBUILD/DesktopPrivate/alpha_private.h
+
       - name: Telegram Desktop build.
         env:
           # /CGTHREADS raises MSVC's LTCG code-generation parallelism from the
@@ -256,9 +295,50 @@ jobs:
           -D DESKTOP_APP_ENABLE_LTO=${{ inputs.enable_lto && 'ON' || 'OFF' }} ^
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=${{ inputs.enable_autoupdate && 'OFF' || 'ON' }} ^
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+          %TDESKTOP_BUILD_SPECIAL%
 
           cmake --build ..\out --config Release --parallel
+
+      # Signs the v2 envelope in one pass with the Ed25519 manifest key, then
+      # writes the "current" feed entry that points the clients to it.
+      - name: Pack signed update.
+        if: inputs.enable_autoupdate
+        shell: bash
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          CHANNEL: ${{ inputs.update_channel }}
+        run: |
+          set -e
+          cd "$TBUILD/$REPO_NAME/out/Release"
+          VERSION=$(awk '$1 == "AppVersion" { print $2 }' ../../Telegram/build/version | tr -d '\r')
+          KEY="$RUNNER_TEMP/update-signing.pem"
+          trap 'rm -f "$KEY"' EXIT
+          printf '%s\n' "$UPDATE_SIGNING_KEY" > "$KEY"
+
+          ./Packer.exe -path Telegram.exe -path Updater.exe \
+            -target win64 \
+            -version $VERSION \
+            -channel $CHANNEL \
+            -keys-loc ../../Telegram/Resources/update \
+            -local-key "$KEY" \
+            -local-key-id "$UPDATE_KEY_ID"
+
+          SUFFIX=""
+          if [ "$CHANNEL" = "beta" ]; then
+            SUFFIX="-beta"
+          fi
+          UPDATE="td-update-win-x64-$VERSION$SUFFIX"
+          if [ ! -f "$UPDATE" ]; then
+            echo "::error::Packer did not write $UPDATE."
+            exit 1
+          fi
+
+          mkdir -p "$GITHUB_WORKSPACE/update"
+          mv "$UPDATE" "$GITHUB_WORKSPACE/update/"
+          printf '{"win64":{"%s":{"released":"%s","link":"/%s"}}}\n' \
+            "$CHANNEL" "$VERSION" "$UPDATE" > "$GITHUB_WORKSPACE/update/current"
+          echo "Packed $UPDATE for the $CHANNEL channel."
 
       - name: Move artifact.
         run: |
@@ -266,6 +346,7 @@ jobs:
           mkdir artifact
           move %OUT%\Telegram.exe artifact\
           if exist %OUT%\Updater.exe move %OUT%\Updater.exe artifact\
+          if exist update move update artifact\update
 
       - uses: actions/upload-artifact@v7
         name: Upload artifact.
