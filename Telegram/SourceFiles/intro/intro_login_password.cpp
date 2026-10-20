@@ -14,6 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_account.h"
 #include "main/main_app_config.h"
 #include "base/random.h"
+#include "boxes/abstract_box.h"
 #include "ui/boxes/confirm_box.h"
 #include "ui/text/format_values.h" // Ui::FormatPhone
 #include "ui/widgets/buttons.h"
