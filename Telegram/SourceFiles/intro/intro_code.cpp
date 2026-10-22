@@ -292,7 +292,8 @@ void CodeWidget::codeSubmitFail(const MTP::Error &error) {
 		}).fail([=](const MTP::Error &error) {
 			codeSubmitFail(error);
 		}).handleFloodErrors().send();
-	} else if (!MTP::IgnoreError(error)) {
+	} else if (!handleDeviceBindingError(err)
+		&& !MTP::IgnoreError(error)) {
 	    showCodeError(rpl::single(err));
 	}
 }

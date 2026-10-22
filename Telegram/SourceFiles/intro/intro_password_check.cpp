@@ -160,7 +160,8 @@ void PasswordCheckWidget::pwdSubmitFail(const MTP::Error &error) {
 		goBack();
 	} else if (type == u"SRP_ID_INVALID"_q) {
 		handleSrpIdInvalid();
-	} else if (!MTP::IgnoreError(error)) {
+	} else if (!handleDeviceBindingError(type)
+		&& !MTP::IgnoreError(error)) {
 		showError(rpl::single(type));
 		_pwdField->setFocus();
 	}
@@ -273,7 +274,8 @@ void PasswordCheckWidget::codeSubmitFail(const MTP::Error &error) {
 		showError(tr::lng_signin_wrong_code());
 		_codeField->selectAll();
 		_codeField->showError();
-	} else if (!MTP::IgnoreError(error)) {
+	} else if (!handleDeviceBindingError(type)
+		&& !MTP::IgnoreError(error)) {
 		showError(rpl::single(type));
 		_codeField->setFocus();
 	}

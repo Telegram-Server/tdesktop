@@ -630,6 +630,16 @@ void PasscodeBox::setPasswordFail(const QString &type) {
 		_recoverEmail->setFocus();
 		_recoverEmail->showError();
 		update();
+	} else if (type == u"AUTHORIZATIONS_TOO_MUCH"_q) {
+		ShowCloudBox(
+			this,
+			_cloudFields.customShow,
+			Ui::MakeInformBox(tr::lng_intro_device_limit_reached()));
+	} else if (type == u"DEVICE_ID_REQUIRED"_q) {
+		ShowCloudBox(
+			this,
+			_cloudFields.customShow,
+			Ui::MakeInformBox(tr::lng_intro_device_id_required()));
 	}
 }
 

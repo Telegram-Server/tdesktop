@@ -207,7 +207,8 @@ void LoginPasswordWidget::signInFail(const MTP::Error &error) {
 		passwordLoginDisabled();
 	} else if (type == u"PHONE_NUMBER_INVALID"_q) {
 		goBack();
-	} else if (!MTP::IgnoreError(error)) {
+	} else if (!handleDeviceBindingError(type)
+		&& !MTP::IgnoreError(error)) {
 		showPasswordError(rpl::single(type));
 	}
 }

@@ -423,6 +423,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_phone_password_not_set" = "This account doesn't have a login password yet. Log in with a code instead?";
 "lng_phone_password_unavailable" = "Password login is not available on this server.";
 "lng_signup_closed" = "Sign-up is closed on this server, please contact the administrator.";
+"lng_intro_device_limit_reached" = "This account has reached its limit of linked devices. Please contact the administrator to unlink a device.";
+"lng_intro_device_id_required" = "This account requires a newer version of the app. Please update to the latest version.";
 "lng_login_password_desc" = "Please enter the login password\nof this account.";
 "lng_login_password_field" = "Login password";
 "lng_login_password_to_code" = "Log in with a code instead";

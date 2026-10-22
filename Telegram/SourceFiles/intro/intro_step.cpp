@@ -22,6 +22,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/abstract_box.h"
 #include "core/application.h"
 #include "core/core_settings.h"
+#include "core/update_checker.h"
 #include "apiwrap.h"
 #include "api/api_peer_photo.h"
 #include "mainwindow.h"
@@ -180,6 +181,25 @@ void Step::finish(const MTPauth_Authorization &auth, QImage &&photo) {
 		getData()->passwordSignup = false;
 		goReplace<SignupWidget>(Animate::Forward);
 	});
+}
+
+bool Step::handleDeviceBindingError(const QString &type) {
+	if (type == u"AUTHORIZATIONS_TOO_MUCH"_q) {
+		Ui::show(Ui::MakeInformBox(tr::lng_intro_device_limit_reached()));
+		return true;
+	} else if (type == u"DEVICE_ID_REQUIRED"_q) {
+		const auto callback = [=](Fn<void()> &&close) {
+			Core::UpdateApplication();
+			close();
+		};
+		Ui::show(Ui::MakeConfirmBox({
+			.text = tr::lng_intro_device_id_required(),
+			.confirmed = callback,
+			.confirmText = tr::lng_menu_update(),
+		}));
+		return true;
+	}
+	return false;
 }
 
 void Step::finish(const MTPUser &user, QImage &&photo) {

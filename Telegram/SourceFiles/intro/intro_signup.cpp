@@ -165,7 +165,8 @@ void SignupWidget::nameSubmitFail(const MTP::Error &error) {
 	} else if (err == "LASTNAME_INVALID") {
 		showError(tr::lng_bad_name());
 		_last->setFocus();
-	} else if (!MTP::IgnoreError(error)) {
+	} else if (!handleDeviceBindingError(err)
+		&& !MTP::IgnoreError(error)) {
 		showError(rpl::single(err));
 		if (_invertOrder) {
 			_last->setFocus();

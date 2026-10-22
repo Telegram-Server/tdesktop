@@ -124,6 +124,7 @@ protected:
 	}
 	void finish(const MTPauth_Authorization &auth, QImage &&photo = {});
 	void finish(const MTPUser &user, QImage &&photo = {});
+	[[nodiscard]] bool handleDeviceBindingError(const QString &type);
 	void createSession(
 		const MTPUser &user,
 		QImage photo,

@@ -416,7 +416,7 @@ void QrWidget::setupPasskeyLink() {
 						_passkeyLoginData = std::nullopt;
 						if (error == u"SESSION_PASSWORD_NEEDED"_q) {
 							sendCheckPasswordRequest();
-						} else {
+						} else if (!handleDeviceBindingError(error)) {
 							showError(rpl::single(error));
 						}
 					});
@@ -477,6 +477,8 @@ void QrWidget::showTokenError(const MTP::Error &error) {
 	_requestId = 0;
 	if (error.type() == u"SESSION_PASSWORD_NEEDED"_q) {
 		sendCheckPasswordRequest();
+	} else if (handleDeviceBindingError(error.type())) {
+		_forceRefresh = false;
 	} else if (base::take(_forceRefresh)) {
 		refreshCode();
 	} else {
