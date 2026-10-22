@@ -788,6 +788,11 @@ void GroupInfoBox::submit() {
 	if (_creationRequestId || _creatingInviteLink) {
 		return;
 	}
+	const auto broadcast = (_type == Type::Channel);
+	if (!_navigation->session().permissions().canCreate(broadcast)) {
+		showToast(Data::TelesrvPermissions::DeniedText());
+		return;
+	}
 
 	auto title = TextUtilities::PrepareForSending(_title->getLastText());
 	auto description = _description

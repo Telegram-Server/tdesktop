@@ -3342,10 +3342,18 @@ void SessionController::showAddContact() {
 }
 
 void SessionController::showNewGroup() {
+	if (!session().permissions().canCreate(false)) {
+		showToast(Data::TelesrvPermissions::DeniedText());
+		return;
+	}
 	_window->show(Box<GroupInfoBox>(this, GroupInfoBox::Type::Group));
 }
 
 void SessionController::showNewChannel() {
+	if (!session().permissions().canCreate(true)) {
+		showToast(Data::TelesrvPermissions::DeniedText());
+		return;
+	}
 	_window->show(Box<GroupInfoBox>(this, GroupInfoBox::Type::Channel));
 }
 

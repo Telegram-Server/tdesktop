@@ -19,6 +19,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "calls/calls_instance.h"
 #include "core/application.h"
 #include "core/click_handler_types.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_changes.h"
 #include "data/data_document_media.h"
 #include "data/data_folder.h"
@@ -685,23 +686,29 @@ void MainMenu::setupMenu() {
 			object_ptr<Ui::PlainShadow>(_menu),
 			{ 0, st::mainMenuSkip, 0, st::mainMenuSkip });
 
-		AddMyChannelsBox(addAction(
-			tr::lng_create_group_title(),
-			{ &st::menuIconGroups }
-		), controller, true)->addClickHandler([=](Qt::MouseButton which) {
-			if (which == Qt::LeftButton) {
-				controller->showNewGroup();
-			}
-		});
-
-		AddMyChannelsBox(addAction(
-			tr::lng_create_channel_title(),
-			{ &st::menuIconChannel }
-		), controller, false)->addClickHandler([=](Qt::MouseButton which) {
-			if (which == Qt::LeftButton) {
-				controller->showNewChannel();
-			}
-		});
+		const auto permissions = &controller->session().permissions();
+		if (permissions->canCreate(false)) {
+			AddMyChannelsBox(addAction(
+				tr::lng_create_group_title(),
+				{ &st::menuIconGroups }
+			), controller, true)->addClickHandler([=](
+					Qt::MouseButton which) {
+				if (which == Qt::LeftButton) {
+					controller->showNewGroup();
+				}
+			});
+		}
+		if (permissions->canCreate(true)) {
+			AddMyChannelsBox(addAction(
+				tr::lng_create_channel_title(),
+				{ &st::menuIconChannel }
+			), controller, false)->addClickHandler([=](
+					Qt::MouseButton which) {
+				if (which == Qt::LeftButton) {
+					controller->showNewChannel();
+				}
+			});
+		}
 
 		addAction(
 			tr::lng_menu_contacts(),
