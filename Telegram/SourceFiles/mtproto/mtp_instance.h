@@ -48,6 +48,7 @@ public:
 		AuthKeysList keys;
 		QString deviceModel;
 		QString systemVersion;
+		QString deviceId;
 	};
 
 	enum class Mode {
@@ -81,6 +82,7 @@ public:
 	[[nodiscard]] bool isTestMode() const;
 	[[nodiscard]] QString deviceModel() const;
 	[[nodiscard]] QString systemVersion() const;
+	[[nodiscard]] QString deviceId() const;
 
 	// Main thread.
 	void dcPersistentKeyChanged(DcId dcId, const AuthKeyPtr &persistentKey);

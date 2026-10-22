@@ -87,6 +87,7 @@ public:
 	// Thread safe.
 	[[nodiscard]] QString deviceModel() const;
 	[[nodiscard]] QString systemVersion() const;
+	[[nodiscard]] QString deviceId() const;
 
 	// Main thread.
 	void requestConfig();
@@ -233,6 +234,7 @@ private:
 
 	QString _deviceModelDefault;
 	QString _systemVersion;
+	QString _deviceId;
 
 	mutable QMutex _deviceModelMutex;
 	QString _customDeviceModel;
@@ -339,6 +341,7 @@ Instance::Private::Private(
 
 	_deviceModelDefault = std::move(fields.deviceModel);
 	_systemVersion = std::move(fields.systemVersion);
+	_deviceId = std::move(fields.deviceId);
 
 	_customDeviceModel = Core::App().settings().customDeviceModel();
 	Core::App().settings().customDeviceModelChanges(
@@ -913,6 +916,10 @@ QString Instance::Private::deviceModel() const {
 
 QString Instance::Private::systemVersion() const {
 	return _systemVersion;
+}
+
+QString Instance::Private::deviceId() const {
+	return _deviceId;
 }
 
 void Instance::Private::unpaused() {
@@ -2119,6 +2126,10 @@ QString Instance::deviceModel() const {
 
 QString Instance::systemVersion() const {
 	return _private->systemVersion();
+}
+
+QString Instance::deviceId() const {
+	return _private->deviceId();
 }
 
 void Instance::setUpdatesHandler(Fn<void(const Response&)> handler) {

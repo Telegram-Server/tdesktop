@@ -566,11 +566,17 @@ MTPVector<MTPJSONObjectValue> SessionPrivate::prepareInitParams() {
 	const auto rounded = base::SafeRound(std::abs(sliced) / 900.)
 		* 900
 		* sign;
-	return MTP_vector<MTPJSONObjectValue>(
-		1,
-		MTP_jsonObjectValue(
-			MTP_string("tz_offset"),
-			MTP_jsonNumber(MTP_double(rounded))));
+	auto result = QVector<MTPJSONObjectValue>();
+	result.push_back(MTP_jsonObjectValue(
+		MTP_string("tz_offset"),
+		MTP_jsonNumber(MTP_double(rounded))));
+	const auto deviceId = _instance->deviceId();
+	if (_currentDcType != DcType::Cdn && !deviceId.isEmpty()) {
+		result.push_back(MTP_jsonObjectValue(
+			MTP_string("device_id"),
+			MTP_jsonString(MTP_string(deviceId))));
+	}
+	return MTP_vector<MTPJSONObjectValue>(std::move(result));
 }
 
 void SessionPrivate::tryToSend() {
