@@ -1,3 +1,18 @@
+7.3.2 (21.10.26)
+
+- Connect to the DarkMoon server and open dm:// and darkmoon.cc links.
+- Log in and sign up with a login password instead of a code.
+- Check for updates at darkmoon.cc.
+- Support device limits set by the server administrator.
+- Add screen sharing and members column buttons to group call controls.
+- Pause music playback while playing voice messages.
+- Copy photo text with Cmd+Shift+C and keep forward info in copied messages.
+- Keep reading position on chat open and after scheduling a message.
+- Refuse dragging out protected files and media from restricted chats.
+- Fix draft text turning into a quote after cancelling an edit.
+- Fix slowmode timer not showing in comments and threads.
+- Fix full screen from a maximized window on Windows.
+
 7.3.1 (09.10.26)
 
 - Fix wallet encryption with Windows Hello sometimes failing.
