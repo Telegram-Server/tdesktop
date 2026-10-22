@@ -1,3 +1,11 @@
+7.3.3 (22.10.26)
+
+- Support staff permissions set by the server administrator.
+- Hide sending, editing and deleting actions the administrator restricted.
+- Hide creating, joining and leaving groups and channels when restricted.
+- Hide clearing private chats and adding contacts when restricted.
+- Allow messaging only selected contacts when a send list is set.
+
 7.3.2 (21.10.26)
 
 - Connect to the DarkMoon server and open dm:// and darkmoon.cc links.
