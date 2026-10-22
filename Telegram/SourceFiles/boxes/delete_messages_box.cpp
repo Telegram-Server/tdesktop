@@ -11,6 +11,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "base/unixtime.h"
 #include "core/application.h"
 #include "core/core_settings.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_histories.h"
@@ -327,6 +328,26 @@ bool DeleteMessagesBox::hasSavedMusicMessages() const {
 	return false;
 }
 
+bool DeleteMessagesBox::permissionsAllow() const {
+	const auto permissions = &_session->permissions();
+	if (const auto peer = _wipeHistoryPeer) {
+		return permissions->canClearHistory(peer)
+			&& (_wipeHistoryJustClear
+				|| !_wipeHistoryFirstToDelete.isNull()
+				|| permissions->canLeave(peer));
+	} else if (permissions->allows(Data::TelesrvAction::Delete)) {
+		return true;
+	}
+	return ranges::none_of(_ids, [&](FullMsgId fullId) {
+		const auto item = _session->data().message(fullId);
+		return item
+			&& !item->isSending()
+			&& !item->hasFailed()
+			&& !item->isEphemeral()
+			&& !item->isSavedMusicItem();
+	});
+}
+
 PeerData *DeleteMessagesBox::checkFromSinglePeer() const {
 	auto result = (PeerData*)nullptr;
 	for (const auto &fullId : _ids) {
@@ -549,7 +570,11 @@ void DeleteMessagesBox::deleteAndClear() {
 			strong->closeBox();
 		}
 	};
-	if (!_wipeHistoryFirstToDelete.isNull()) {
+	if (!permissionsAllow()) {
+		uiShow()->showToast(Data::TelesrvPermissions::DeniedText());
+		closeBox();
+		return;
+	} else if (!_wipeHistoryFirstToDelete.isNull()) {
 		const auto peer = _wipeHistoryPeer;
 		const auto firstDayToDelete = _wipeHistoryFirstToDelete;
 		const auto lastDayToDelete = _wipeHistoryLastToDelete;

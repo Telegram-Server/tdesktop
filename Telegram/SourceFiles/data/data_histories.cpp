@@ -11,6 +11,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/business/data_shortcut_messages.h"
 #include "data/components/ephemeral_messages.h"
 #include "data/components/scheduled_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/components/welcome_messages.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_channel.h"
@@ -968,11 +969,16 @@ void Histories::deleteMessages(const MessageIdsList &ids, bool revoke) {
 	base::flat_map<not_null<PeerData*>, QVector<MTPint>> scheduledIdsByPeer;
 	base::flat_map<BusinessShortcutId, QVector<MTPint>> quickIdsByShortcut;
 	base::flat_set<not_null<DocumentData*>> savedMusic;
+	const auto allowed = _owner->session().permissions().allows(
+		TelesrvAction::Delete);
 	for (const auto &itemId : ids) {
 		if (const auto item = _owner->message(itemId)) {
 			const auto history = item->history();
+			const auto local = item->isSending() || item->hasFailed();
 			if (item->isSavedMusicItem()) {
 				savedMusic.emplace(item->media()->document());
+				continue;
+			} else if (!allowed && !local && !item->isEphemeral()) {
 				continue;
 			} else if (item->isScheduled()) {
 				const auto wasOnServer = !item->isSending()

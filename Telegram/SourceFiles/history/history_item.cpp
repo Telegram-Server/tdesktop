@@ -3472,7 +3472,12 @@ bool HistoryItem::allowsMediaDownloadControls() const {
 }
 
 bool HistoryItem::canDelete() const {
+	using Action = Data::TelesrvAction;
 	if (isSponsored()) {
+		return false;
+	} else if (!isSending()
+		&& !hasFailed()
+		&& !_history->session().permissions().allows(Action::Delete)) {
 		return false;
 	} else if (isEphemeral()) {
 		return false;

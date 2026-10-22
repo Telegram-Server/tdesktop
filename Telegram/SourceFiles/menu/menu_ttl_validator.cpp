@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "menu/menu_ttl_validator.h"
 
 #include "apiwrap.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_peer.h"
@@ -66,6 +67,13 @@ Args TTLValidator::createArgs() const {
 	auto callback = [=](
 			TimeId period,
 			Fn<void()>) {
+		using Action = Data::TelesrvAction;
+		const auto permissions = &peer->session().permissions();
+		if (period && !permissions->allows(Action::Delete)) {
+			show->showToast(Data::TelesrvPermissions::DeniedText());
+			show->hideLayer();
+			return;
+		}
 		auto &api = peer->session().api();
 		if (state->savingRequestId) {
 			if (period == state->savingPeriod) {
@@ -109,6 +117,11 @@ Args TTLValidator::createArgs() const {
 }
 
 bool TTLValidator::can() const {
+	using Action = Data::TelesrvAction;
+	if (!_peer->session().permissions().allows(Action::Delete)
+		&& !_peer->messagesTTL()) {
+		return false;
+	}
 	return (_peer->isUser()
 			&& !_peer->isSelf()
 			&& !_peer->isNotificationsUser()

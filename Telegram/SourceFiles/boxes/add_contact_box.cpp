@@ -32,6 +32,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/text/format_values.h"
 #include "ui/text/text_utilities.h"
 #include "ui/painter.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_user.h"
@@ -622,7 +623,10 @@ void GroupInfoBox::prepare() {
 		[=] { submit(); });
 	addButton(tr::lng_cancel(), [this] { closeBox(); });
 
-	if (_type == Type::Group) {
+	using Action = Data::TelesrvAction;
+	const auto ttlAllowed = _navigation->session().permissions().allows(
+		Action::Delete);
+	if (_type == Type::Group && ttlAllowed) {
 		_navigation->session().api().selfDestruct().reload();
 
 		const auto top = addTopButton(st::infoTopBarMenu);
@@ -714,6 +718,10 @@ void GroupInfoBox::submitName() {
 }
 
 TimeId GroupInfoBox::ttlPeriod() const {
+	using Action = Data::TelesrvAction;
+	if (!_navigation->session().permissions().allows(Action::Delete)) {
+		return 0;
+	}
 	return _ttlPeriodOverridden
 		? _ttlPeriod
 		: _navigation->session().api().selfDestruct()

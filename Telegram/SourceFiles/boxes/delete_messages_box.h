@@ -60,6 +60,7 @@ private:
 	[[nodiscard]] bool hasScheduledMessages() const;
 	[[nodiscard]] bool hasWelcomeTemplateMessages() const;
 	[[nodiscard]] bool hasSavedMusicMessages() const;
+	[[nodiscard]] bool permissionsAllow() const;
 	[[nodiscard]] std::optional<RevokeConfig> revokeText(
 		not_null<PeerData*> peer) const;
 	[[nodiscard]] PaidPostType paidPostType() const;

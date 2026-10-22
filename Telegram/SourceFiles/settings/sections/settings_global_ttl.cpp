@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "api/api_self_destruct.h"
 #include "apiwrap.h"
 #include "boxes/peer_list_controllers.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_changes.h"
 #include "data/data_chat.h"
 #include "data/data_peer.h"
@@ -167,6 +168,17 @@ struct GlobalTTLState {
 	rpl::lifetime requestLifetime;
 };
 
+[[nodiscard]] bool DefaultTTLAllowed(
+		not_null<Window::SessionController*> controller,
+		not_null<GlobalTTLState*> state) {
+	using Action = Data::TelesrvAction;
+	if (controller->session().permissions().allows(Action::Delete)) {
+		return true;
+	}
+	state->show->showToast(Data::TelesrvPermissions::DeniedText());
+	return false;
+}
+
 void BuildTopContent(SectionBuilder &builder, rpl::producer<> showFinished) {
 	builder.add([showFinished = std::move(showFinished)](
 			const WidgetContext &ctx) mutable {
@@ -225,6 +237,9 @@ void RebuildButtons(
 	};
 
 	const auto showSure = [=](TimeId ttl, bool rebuild) {
+		if (!DefaultTTLAllowed(controller, state)) {
+			return;
+		}
 		const auto ttlText = Ui::FormatTTLAfter(ttl);
 		const auto confirmed = [=] {
 			if (rebuild) {
@@ -334,6 +349,9 @@ void BuildCustomButton(
 		const auto show = controller->uiShow();
 
 		const auto showSure = [=](TimeId ttl, bool rebuild) {
+			if (!DefaultTTLAllowed(controller, state)) {
+				return;
+			}
 			const auto ttlText = Ui::FormatTTLAfter(ttl);
 			const auto confirmed = [=] {
 				if (rebuild) {
@@ -424,6 +442,11 @@ void BuildApplyToExisting(
 					}
 					const auto &apiTTL = session->api().selfDestruct();
 					const auto ttl = apiTTL.periodDefaultHistoryTTLCurrent();
+					using Action = Data::TelesrvAction;
+					if (ttl && !session->permissions().allows(Action::Delete)) {
+						box->showToast(Data::TelesrvPermissions::DeniedText());
+						return;
+					}
 					for (const auto &peer : peers) {
 						peer->session().api().request(MTPmessages_SetHistoryTTL(
 							peer->input(),
