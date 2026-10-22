@@ -155,6 +155,12 @@ using UpdatedFileReferences = Data::UpdatedFileReferences;
 	return nullptr;
 }
 
+void ShowPermissionDenied(not_null<PeerData*> peer) {
+	if (const auto show = ShowForPeer(peer)) {
+		show->showToast(Data::TelesrvPermissions::DeniedText());
+	}
+}
+
 void ShowChannelsLimitBox(not_null<PeerData*> peer) {
 	if (const auto window = Core::App().windowFor(peer)) {
 		window->invokeForSessionController(
@@ -1568,6 +1574,11 @@ void ApiWrap::deleteParticipantReaction(
 void ApiWrap::deleteSublistHistory(
 		not_null<ChannelData*> channel,
 		not_null<PeerData*> sublistPeer) {
+	using Action = Data::TelesrvAction;
+	if (!_session->permissions().allows(Action::ClearHistory)) {
+		ShowPermissionDenied(channel);
+		return;
+	}
 	deleteSublistHistorySend(channel, sublistPeer);
 }
 
@@ -2194,11 +2205,21 @@ void ApiWrap::updatePrivacyLastSeens() {
 }
 
 void ApiWrap::clearHistory(not_null<PeerData*> peer, bool revoke) {
+	if (!_session->permissions().canClearHistory(peer)) {
+		ShowPermissionDenied(peer);
+		return;
+	}
 	deleteHistory(peer, true, revoke);
 }
 
 void ApiWrap::deleteConversation(not_null<PeerData*> peer, bool revoke) {
-	if (const auto chat = peer->asChat()) {
+	const auto permissions = &_session->permissions();
+	if (peer->isUser()
+		? !permissions->canClearHistory(peer)
+		: !permissions->canLeave(peer)) {
+		ShowPermissionDenied(peer);
+		return;
+	} else if (const auto chat = peer->asChat()) {
 		request(MTPmessages_DeleteChatUser(
 			MTP_flags(0),
 			chat->inputChat(),

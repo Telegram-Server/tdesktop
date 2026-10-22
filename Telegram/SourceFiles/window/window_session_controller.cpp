@@ -40,6 +40,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "media/view/media_view_open_common.h"
 #include "data/components/gift_auctions.h"
 #include "data/components/recent_peers.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/stickers/data_custom_emoji.h"
 #include "data/data_document_resolver.h"
 #include "data/data_download_manager.h"
@@ -3072,7 +3073,8 @@ void SessionController::showCalendar(ShowCalendarDescriptor &&descriptor) {
 			: jump,
 		.minDate = minPeerDate,
 		.maxDate = maxPeerDate,
-		.allowsSelection = history->peer->isUser(),
+		.allowsSelection = history->peer->isUser()
+			&& session().permissions().canClearHistory(history->peer),
 		.selectionChanged = selectionChanged,
 		.dynamicImageForDate = std::move(searchCalendarResult.factory),
 		.requireImage = requireImage,

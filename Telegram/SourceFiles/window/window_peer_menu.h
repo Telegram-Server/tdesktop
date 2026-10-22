@@ -176,6 +176,9 @@ void ToggleHistoryArchived(
 	std::shared_ptr<ChatHelpers::Show> show,
 	not_null<History*> history,
 	bool archived);
+[[nodiscard]] bool CanDeleteChat(
+	not_null<PeerData*> peer,
+	bool sublist = false);
 Fn<void()> ClearHistoryHandler(
 	not_null<Window::SessionController*> controller,
 	not_null<PeerData*> peer);

@@ -101,6 +101,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "info/statistics/info_statistics_widget.h"
 #include "info/stories/info_stories_widget.h"
 #include "data/components/scheduled_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/components/welcome_messages.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/stickers/data_custom_emoji.h"
@@ -860,7 +861,9 @@ void Filler::addToggleArchive() {
 }
 
 void Filler::addClearHistory() {
-	if (_topic || _peer->isMonoforum()) {
+	if (_topic
+		|| _peer->isMonoforum()
+		|| !_peer->session().permissions().canClearHistory(_peer)) {
 		return;
 	}
 	const auto channel = _peer->asChannel();
@@ -880,7 +883,9 @@ void Filler::addClearHistory() {
 }
 
 void Filler::addDeleteChat() {
-	if (_topic || (!_sublist && _peer->isChannel())) {
+	if (_topic
+		|| (!_sublist && _peer->isChannel())
+		|| !CanDeleteChat(_peer, _sublist != nullptr)) {
 		return;
 	}
 	_addAction({
@@ -2755,7 +2760,7 @@ void PeerMenuBlockUserBox(
 		box->addSkip(st::boxMediumSkip);
 	}
 
-	const auto clear = v::is<ClearChat>(suggestClear)
+	const auto clear = (v::is<ClearChat>(suggestClear) && CanDeleteChat(peer))
 		? box->addRow(object_ptr<Ui::Checkbox>(
 			box,
 			tr::lng_blocked_list_confirm_clear(tr::now),
@@ -4299,19 +4304,35 @@ void ToggleHistoryArchived(
 		callback);
 }
 
+bool CanDeleteChat(not_null<PeerData*> peer, bool sublist) {
+	const auto permissions = &peer->session().permissions();
+	return (sublist || peer->isUser())
+		? permissions->allows(Data::TelesrvAction::ClearHistory)
+		: permissions->canLeave(peer);
+}
+
 Fn<void()> ClearHistoryHandler(
 		not_null<Window::SessionController*> controller,
 		not_null<PeerData*> peer) {
 	return [=] {
-		if (!controller->showFrozenError()) {
-			controller->show(Box<DeleteMessagesBox>(peer, true));
+		if (controller->showFrozenError()) {
+			return;
+		} else if (!peer->session().permissions().canClearHistory(peer)) {
+			controller->showToast(Data::TelesrvPermissions::DeniedText());
+			return;
 		}
+		controller->show(Box<DeleteMessagesBox>(peer, true));
 	};
 }
 
 Fn<void()> DeleteAndLeaveHandler(
 		not_null<Window::SessionController*> controller,
 		not_null<PeerData*> peer) {
+	if (!CanDeleteChat(peer)) {
+		return [=] {
+			controller->showToast(Data::TelesrvPermissions::DeniedText());
+		};
+	}
 	const auto isCreator = [&] {
 		if (const auto channel = peer->asChannel()) {
 			return channel->amCreator();
@@ -4352,7 +4373,10 @@ Fn<void()> DeleteSublistHandler(
 	const auto weak = base::make_weak(sublist.get());
 	return [=] {
 		if (const auto strong = weak.get()) {
-			if (!controller->showFrozenError()) {
+			if (!CanDeleteChat(strong->sublistPeer(), true)) {
+				controller->showToast(
+					Data::TelesrvPermissions::DeniedText());
+			} else if (!controller->showFrozenError()) {
 				controller->show(Box(DeleteSublistBox, strong));
 			}
 		}
