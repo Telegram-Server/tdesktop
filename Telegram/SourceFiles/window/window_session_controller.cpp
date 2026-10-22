@@ -3338,6 +3338,11 @@ void SessionController::setActiveChatsFilter(
 }
 
 void SessionController::showAddContact() {
+	using Action = Data::TelesrvAction;
+	if (!session().permissions().allows(Action::AddContact)) {
+		showToast(Data::TelesrvPermissions::DeniedText());
+		return;
+	}
 	_window->show(Box<AddContactBox>(&session()));
 }
 

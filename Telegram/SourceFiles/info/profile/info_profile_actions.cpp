@@ -2945,10 +2945,15 @@ void ActionsFiller::addEditContactAction(not_null<UserData*> user) {
 		}
 		controller->window().show(Box(EditContactBox, controller, user));
 	};
+	using namespace rpl::mappers;
 	AddActionButton(
 		_wrap,
 		tr::lng_info_edit_contact(),
-		IsContactValue(user),
+		rpl::combine(
+			IsContactValue(user),
+			user->session().permissions().allowsValue(
+				Data::TelesrvAction::AddContact),
+			_1 && _2),
 		edit,
 		&st::infoIconEdit);
 }

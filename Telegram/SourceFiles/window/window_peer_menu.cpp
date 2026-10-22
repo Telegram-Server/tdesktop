@@ -1130,7 +1130,9 @@ void Filler::addNewContact() {
 		|| user->isContact()
 		|| user->isSelf()
 		|| user->isInaccessible()
-		|| user->isBot()) {
+		|| user->isBot()
+		|| !user->session().permissions().allows(
+			Data::TelesrvAction::AddContact)) {
 		return;
 	}
 	const auto controller = _controller;
@@ -1160,7 +1162,11 @@ void Filler::addShareContact() {
 
 void Filler::addEditContact() {
 	const auto user = _peer->asUser();
-	if (!user || !user->isContact() || user->isSelf()) {
+	if (!user
+		|| !user->isContact()
+		|| user->isSelf()
+		|| !user->session().permissions().allows(
+			Data::TelesrvAction::AddContact)) {
 		return;
 	}
 	const auto controller = _controller;

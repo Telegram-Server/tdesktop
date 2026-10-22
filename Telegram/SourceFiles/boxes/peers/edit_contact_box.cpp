@@ -18,6 +18,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/click_handler_types.h"
 #include "core/ui_integration.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_changes.h"
 #include "data/data_document.h"
 #include "data/data_premium_limits.h"
@@ -88,6 +89,13 @@ void SendRequest(
 		const QString &last,
 		const QString &phone,
 		const TextWithEntities &note) {
+	using Action = Data::TelesrvAction;
+	if (!user->session().permissions().allows(Action::AddContact)) {
+		if (const auto strong = box.get()) {
+			strong->showToast(Data::TelesrvPermissions::DeniedText());
+		}
+		return;
+	}
 	const auto wasContact = user->isContact();
 	using Flag = MTPcontacts_AddContact::Flag;
 	user->session().api().request(MTPcontacts_AddContact(

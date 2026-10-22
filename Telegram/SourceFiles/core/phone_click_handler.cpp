@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "boxes/add_contact_box.h"
 #include "core/click_handler_types.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_session.h"
 #include "data/data_user.h"
 #include "info/profile/info_profile_values.h"
@@ -337,7 +338,10 @@ void PhoneClickHandler::onClick(ClickContext context) const {
 		phone,
 		controller);
 
-	if (Trim(phone) != Trim(controller->session().user()->phone())) {
+	const auto addAllowed = controller->session().permissions().allows(
+		Data::TelesrvAction::AddContact);
+	if (addAllowed
+		&& Trim(phone) != Trim(controller->session().user()->phone())) {
 		menu->addAction(
 			tr::lng_info_add_as_contact(tr::now),
 			[=, raw = base::make_weak(resolvePhoneAction.get())] {

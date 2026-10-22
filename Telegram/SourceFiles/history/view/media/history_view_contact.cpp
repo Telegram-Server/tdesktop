@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "boxes/add_contact_box.h"
 #include "core/click_handler_types.h" // ClickHandlerContext
+#include "data/components/telesrv_permissions.h"
 #include "data/data_media_types.h"
 #include "data/data_session.h"
 #include "data/data_user.h"
@@ -89,7 +90,12 @@ ClickHandlerPtr AddContactClickHandler(not_null<HistoryItem*> item) {
 			ClickContext context) {
 		const auto my = context.other.value<ClickHandlerContext>();
 		if (const auto controller = my.sessionWindow.get()) {
+			using Action = Data::TelesrvAction;
 			if (controller->session().uniqueId() != session->uniqueId()) {
+				return;
+			} else if (!session->permissions().allows(Action::AddContact)) {
+				controller->showToast(
+					Data::TelesrvPermissions::DeniedText());
 				return;
 			}
 			if (const auto contact = sharedContact()) {

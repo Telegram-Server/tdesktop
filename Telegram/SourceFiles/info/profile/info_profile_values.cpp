@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/text/format_values.h" // Ui::FormatPhone
 #include "ui/text/text_utilities.h"
 #include "lang/lang_keys.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_peer_values.h"
 #include "data/data_saved_messages.h"
@@ -439,9 +440,11 @@ rpl::producer<bool> CanAddContactValue(not_null<UserData*> user) {
 	if (user->isBot() || user->isSelf() || user->isInaccessible()) {
 		return rpl::single(false);
 	}
-	return IsContactValue(
-		user
-	) | rpl::map(!_1);
+	return rpl::combine(
+		IsContactValue(user),
+		user->session().permissions().allowsValue(
+			Data::TelesrvAction::AddContact),
+		!_1 && _2);
 }
 
 rpl::producer<Data::Birthday> BirthdayValue(not_null<UserData*> user) {

@@ -100,6 +100,7 @@ private:
 		QString requestChatName;
 		TimeId requestDate = 0;
 		bool requestChatIsBroadcast = false;
+		bool addForbidden = false;
 	};
 
 	void setupState(not_null<PeerData*> peer, bool showInForum);

@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/ui_integration.h"
 #include "history/history.h"
 #include "data/business/data_business_chatbots.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_emoji_statuses.h"
 #include "data/data_peer.h"
@@ -379,7 +380,8 @@ void ContactStatus::Bar::showState(
 		Ui::Text::MarkedContext context) {
 	using Type = State::Type;
 	const auto type = state.type;
-	_add->setVisible(type == Type::AddOrBlock || type == Type::Add);
+	_add->setVisible(!state.addForbidden
+		&& (type == Type::AddOrBlock || type == Type::Add));
 	const auto unarchive = (type == Type::UnarchiveOrBlock)
 		|| (type == Type::UnarchiveOrReport);
 	_unarchive->setVisible(!_narrow && unarchive);
@@ -853,8 +855,23 @@ void ContactStatus::setupState(not_null<PeerData*> peer, bool showInForum) {
 	_context = Core::TextContext({ .session = &peer->session() });
 	_inner->showState({}, {}, _context);
 	const auto channel = peer->asChannel();
-	rpl::combine(
+	using Action = Data::TelesrvAction;
+	auto peerState = rpl::combine(
 		PeerState(peer),
+		peer->session().permissions().allowsValue(Action::AddContact)
+	) | rpl::map([](State state, bool addAllowed) {
+		using Type = State::Type;
+		if (!addAllowed) {
+			state.addForbidden = true;
+			if (state.type == Type::Add
+				|| state.type == Type::SharePhoneNumber) {
+				state.type = Type::None;
+			}
+		}
+		return state;
+	});
+	rpl::combine(
+		std::move(peerState),
 		PeerCustomStatus(peer),
 		((channel && !showInForum)
 			? Data::PeerFlagValue(channel, ChannelData::Flag::Forum)
@@ -912,6 +929,11 @@ void ContactStatus::setupShareHandler(not_null<UserData*> user) {
 	_inner->shareClicks(
 	) | rpl::on_next([=] {
 		const auto show = _controller->uiShow();
+		using Action = Data::TelesrvAction;
+		if (!user->session().permissions().allows(Action::AddContact)) {
+			show->showToast(Data::TelesrvPermissions::DeniedText());
+			return;
+		}
 		const auto share = [=](Fn<void()> &&close) {
 			user->setBarSettings(0);
 			user->session().api().request(MTPcontacts_AcceptContact(

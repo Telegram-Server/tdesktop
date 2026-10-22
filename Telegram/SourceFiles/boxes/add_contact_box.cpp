@@ -421,7 +421,11 @@ void AddContactBox::submit() {
 }
 
 void AddContactBox::save() {
+	using Action = Data::TelesrvAction;
 	if (_addRequest) {
+		return;
+	} else if (!_session->permissions().allows(Action::AddContact)) {
+		showToast(Data::TelesrvPermissions::DeniedText());
 		return;
 	}
 
