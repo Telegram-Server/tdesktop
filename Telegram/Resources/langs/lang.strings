@@ -8696,6 +8696,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "lng_frozen_text3" = "Appeal via {link} before {date}, or your account will be deleted.";
 "lng_frozen_appeal_button" = "Submit an Appeal";
 
+"lng_telesrv_permission_denied" = "The administrator has restricted this action.";
+"lng_telesrv_send_restricted" = "The administrator has restricted your ability to send messages.";
+"lng_telesrv_send_whitelist_restricted" = "You can only send messages to selected contacts.";
+"lng_telesrv_join_restricted" = "The administrator has restricted joining.";
+
 "lng_age_verify_title" = "Age Verification";
 "lng_age_verify_mobile" = "Please open this media in the official Telegram app for Android or iOS to verify your age.";
 "lng_age_verify_here" = "This is a one-time process using your phone's camera. Your selfie will not be stored by Telegram.";

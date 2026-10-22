@@ -661,6 +661,8 @@ PRIVATE
     data/components/scheduled_messages.h
     data/components/sponsored_messages.cpp
     data/components/sponsored_messages.h
+    data/components/telesrv_permissions.cpp
+    data/components/telesrv_permissions.h
     data/components/top_peers.cpp
     data/components/top_peers.h
     data/components/welcome_messages.cpp

@@ -47,6 +47,7 @@ class LocationPickers;
 class Credits;
 class PromoSuggestions;
 class Passkeys;
+class TelesrvPermissions;
 } // namespace Data
 
 namespace Settings {
@@ -239,6 +240,9 @@ public:
 	[[nodiscard]] Data::Passkeys &passkeys() const {
 		return *_passkeys;
 	}
+	[[nodiscard]] Data::TelesrvPermissions &permissions() const {
+		return *_permissions;
+	}
 	[[nodiscard]] Settings::FaqSuggestions &faqSuggestions() const {
 		return *_faqSuggestions;
 	}
@@ -330,6 +334,7 @@ private:
 
 	// _data depends on _downloader / _uploader.
 	const std::unique_ptr<Data::Session> _data;
+	const std::unique_ptr<Data::TelesrvPermissions> _permissions;
 	const not_null<UserData*> _user;
 
 	// _emojiStickersPack depends on _data.

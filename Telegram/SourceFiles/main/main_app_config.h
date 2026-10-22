@@ -142,6 +142,8 @@ public:
 
 	// telesrv extension, see telesrv.tl.
 	[[nodiscard]] bool passwordLoginAvailable() const;
+	[[nodiscard]] MTPJSONValue getJson(const QString &key) const;
+	[[nodiscard]] bool received() const;
 
 	[[nodiscard]] int64 stakeDiceNanoTonMin() const;
 	[[nodiscard]] int64 stakeDiceNanoTonMax() const;
@@ -206,6 +208,9 @@ private:
 
 	crl::time _lastFrozenRefresh = 0;
 	rpl::lifetime _frozenTrackLifetime;
+	crl::time _lastPermissionRefresh = 0;
+	rpl::lifetime _permissionTrackLifetime;
+	bool _received = false;
 
 	rpl::lifetime _lifetime;
 

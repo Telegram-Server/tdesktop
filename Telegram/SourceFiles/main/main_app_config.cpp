@@ -20,6 +20,7 @@ namespace Main {
 namespace {
 
 constexpr auto kRefreshTimeout = 3600 * crl::time(1000);
+constexpr auto kPermissionRefreshTimeout = 10 * crl::time(1000);
 
 } // namespace
 
@@ -51,6 +52,16 @@ void AppConfig::start() {
 					_lastFrozenRefresh = now;
 					refresh();
 				}
+			}
+		});
+
+		_permissionTrackLifetime = instance->permissionErrorReceived(
+		) | rpl::on_next([=] {
+			const auto now = crl::now();
+			if (!_lastPermissionRefresh
+				|| now > _lastPermissionRefresh + kPermissionRefreshTimeout) {
+				_lastPermissionRefresh = now;
+				refresh(true);
 			}
 		});
 	}, _lifetime);
@@ -318,6 +329,10 @@ bool AppConfig::passwordLoginAvailable() const {
 		u"password_login"_q);
 }
 
+bool AppConfig::received() const {
+	return _received;
+}
+
 int64 AppConfig::stakeDiceNanoTonMin() const {
 	return get<int64>(u"ton_stakedice_stake_amount_min"_q, 100'000'000LL);
 }
@@ -370,6 +385,7 @@ void AppConfig::refresh(bool force) {
 			updateIgnoredRestrictionReasons(std::move(was));
 
 			_groupCallColorings = {};
+			_received = true;
 
 			DEBUG_LOG(("getAppConfig result handled."));
 			_refreshed.fire({});
@@ -424,6 +440,12 @@ auto AppConfig::getValue(const QString &key, Extractor &&extractor) const {
 	return extractor((i != end(_data))
 		? i->second
 		: MTPJSONValue(MTP_jsonNull()));
+}
+
+MTPJSONValue AppConfig::getJson(const QString &key) const {
+	return getValue(key, [](const MTPJSONValue &value) {
+		return value;
+	});
 }
 
 bool AppConfig::getBool(const QString &key, bool fallback) const {

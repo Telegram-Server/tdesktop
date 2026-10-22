@@ -145,6 +145,7 @@ public:
 	[[nodiscard]] auto nonPremiumDelayedRequests() const
 		-> rpl::producer<mtpRequestId>;
 	[[nodiscard]] rpl::producer<> frozenErrorReceived() const;
+	[[nodiscard]] rpl::producer<> permissionErrorReceived() const;
 
 	void syncHttpUnixtime();
 

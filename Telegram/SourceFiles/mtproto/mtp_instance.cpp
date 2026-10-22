@@ -103,6 +103,7 @@ public:
 	[[nodiscard]] auto nonPremiumDelayedRequests() const
 	-> rpl::producer<mtpRequestId>;
 	[[nodiscard]] rpl::producer<> frozenErrorReceived() const;
+	[[nodiscard]] rpl::producer<> permissionErrorReceived() const;
 
 	void restart();
 	void restart(ShiftedDcId shiftedDcId);
@@ -297,6 +298,7 @@ private:
 
 	rpl::event_stream<mtpRequestId> _nonPremiumDelayedRequests;
 	rpl::event_stream<> _frozenErrorReceived;
+	rpl::event_stream<> _permissionErrorReceived;
 
 	base::Timer _checkDelayedTimer;
 
@@ -569,6 +571,10 @@ auto Instance::Private::nonPremiumDelayedRequests() const
 
 rpl::producer<> Instance::Private::frozenErrorReceived() const {
 	return _frozenErrorReceived.events();
+}
+
+rpl::producer<> Instance::Private::permissionErrorReceived() const {
+	return _permissionErrorReceived.events();
 }
 
 void Instance::Private::requestConfigIfOld() {
@@ -1694,6 +1700,8 @@ bool Instance::Private::onErrorDefault(
 		Lang::CurrentCloudManager().resetToDefault();
 	} else if (type == u"FROZEN_METHOD_INVALID"_q) {
 		_frozenErrorReceived.fire({});
+	} else if (type.startsWith(u"TELESRV_PERMISSION_"_q)) {
+		_permissionErrorReceived.fire({});
 	}
 	if (badGuestDc) _badGuestDcRequests.erase(requestId);
 	return false;
@@ -2024,6 +2032,10 @@ rpl::producer<mtpRequestId> Instance::nonPremiumDelayedRequests() const {
 
 rpl::producer<> Instance::frozenErrorReceived() const {
 	return _private->frozenErrorReceived();
+}
+
+rpl::producer<> Instance::permissionErrorReceived() const {
+	return _private->permissionErrorReceived();
 }
 
 void Instance::requestConfigIfOld() {
