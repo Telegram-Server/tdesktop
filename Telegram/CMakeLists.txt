@@ -568,6 +568,8 @@ PRIVATE
     core/click_handler_types.h
     core/core_cloud_password.cpp
     core/core_cloud_password.h
+    core/core_device_id.cpp
+    core/core_device_id.h
     core/core_screenshot_protection.cpp
     core/core_screenshot_protection.h
     core/core_settings.cpp
@@ -1741,6 +1743,7 @@ PRIVATE
     payments/payments_non_panel_process.h
     payments/payments_reaction_process.cpp
     payments/payments_reaction_process.h
+    platform/linux/device_id_linux.cpp
     platform/linux/file_utilities_linux.cpp
     platform/linux/file_utilities_linux.h
     platform/linux/launcher_linux.cpp
@@ -1761,6 +1764,7 @@ PRIVATE
     platform/linux/update_install_linux.cpp
     platform/linux/update_install_linux.h
     platform/linux/webauthn_linux.cpp
+    platform/mac/device_id_mac.mm
     platform/mac/file_utilities_mac.mm
     platform/mac/file_utilities_mac.h
     platform/mac/global_menu_mac.h
@@ -1810,6 +1814,7 @@ PRIVATE
     platform/mac/touchbar/mac_touchbar_manager.mm
     platform/mac/touchbar/mac_touchbar_media_view.h
     platform/mac/touchbar/mac_touchbar_media_view.mm
+    platform/win/device_id_win.cpp
     platform/win/file_utilities_win.cpp
     platform/win/file_utilities_win.h
     platform/win/launcher_win.cpp
@@ -1839,6 +1844,7 @@ PRIVATE
     platform/win/windows_taskbar_buttons.h
     platform/win/windows_toast_activator.cpp
     platform/win/windows_toast_activator.h
+    platform/platform_device_id.h
     platform/platform_file_utilities.cpp
     platform/platform_file_utilities.h
     platform/platform_launcher.h
@@ -2453,7 +2459,7 @@ elseif (APPLE)
         target_link_libraries(Telegram PRIVATE desktop-app::external_iconv)
     endif()
 
-    target_link_frameworks(Telegram PRIVATE CoreBluetooth)
+    target_link_frameworks(Telegram PRIVATE CoreBluetooth IOKit)
     target_link_frameworks_weak(Telegram PRIVATE UserNotifications)
 
     set(icons_path ${CMAKE_CURRENT_SOURCE_DIR}/Telegram/Images.xcassets)
