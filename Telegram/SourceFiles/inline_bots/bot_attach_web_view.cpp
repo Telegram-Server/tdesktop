@@ -33,6 +33,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/ui_integration.h" // TextContext
 #include "data/components/ephemeral_messages.h"
 #include "data/components/location_pickers.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_bot_app.h"
 #include "data/data_changes.h"
 #include "data/data_document.h"
@@ -1807,6 +1808,12 @@ void WebViewInstance::botSendData(QByteArray data) {
 		|| !button->simple
 		|| _context.action->history->peer != _bot
 		|| _dataSent) {
+		return;
+	}
+	const auto error = _session->permissions().sendError(_bot);
+	if (!error.isEmpty()) {
+		_parentShow->showToast(error);
+		botClose();
 		return;
 	}
 	_dataSent = true;

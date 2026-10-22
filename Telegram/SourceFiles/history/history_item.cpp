@@ -57,6 +57,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/components/ephemeral_messages.h"
 #include "data/components/scheduled_messages.h"
 #include "data/components/sponsored_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/components/welcome_messages.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_bot_app.h"
@@ -3362,7 +3363,8 @@ bool HistoryItem::allowsSendNow() const {
 		&& !isSending()
 		&& !hasFailed()
 		&& !isEditingMedia()
-		&& (paidType() == PaidPostType::None);
+		&& (paidType() == PaidPostType::None)
+		&& _history->session().permissions().canSendTo(_history->peer);
 }
 
 bool HistoryItem::allowsReschedule() const {

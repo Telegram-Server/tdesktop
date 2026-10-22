@@ -11,6 +11,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/peers/edit_peer_permissions_box.h"
 #include "boxes/premium_limits_box.h" // FileSizeLimitBox.
 #include "chat_helpers/compose/compose_show.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_chat.h"
 #include "data/data_channel.h"
 #include "data/data_forum_topic.h"
@@ -238,6 +239,8 @@ bool CanSendAnyOf(
 	if (peer->session().frozen()
 		&& !peer->isFreezeAppealChat()) {
 		return false;
+	} else if (!peer->session().permissions().canSendTo(peer)) {
+		return false;
 	} else if (const auto user = peer->asUser()) {
 		if (user->isInaccessible()
 			|| user->isRepliesChat()
@@ -297,12 +300,15 @@ SendError RestrictionError(
 		not_null<PeerData*> peer,
 		ChatRestriction restriction) {
 	using Flag = ChatRestriction;
+	auto permissionError = peer->session().permissions().sendError(peer);
 	if (peer->session().frozen()
 		&& !peer->isFreezeAppealChat()) {
 		return SendError({
 			.text = tr::lng_frozen_restrict_title(tr::now),
 			.frozen = true,
 		});
+	} else if (!permissionError.isEmpty()) {
+		return SendError(std::move(permissionError));
 	} else if (const auto restricted = peer->amRestricted(restriction)) {
 		if (const auto user = peer->asUser()) {
 			if (user->requiresPremiumToWrite()

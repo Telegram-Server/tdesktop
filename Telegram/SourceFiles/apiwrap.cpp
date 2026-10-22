@@ -45,6 +45,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/components/credits.h"
 #include "data/components/ephemeral_messages.h"
 #include "data/components/scheduled_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/components/welcome_messages.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_changes.h"
@@ -573,6 +574,11 @@ void ApiWrap::sendMessageFail(
 			: peer->isUser()
 			? tr::lng_error_noforwards_user(tr::now)
 			: tr::lng_error_noforwards_group(tr::now), kJoinErrorDuration);
+	} else if (show && error.startsWith(u"TELESRV_PERMISSION_"_q)) {
+		const auto text = _session->permissions().sendError(peer);
+		show->showToast(text.isEmpty()
+			? Data::TelesrvPermissions::DeniedText()
+			: text);
 	} else if (error == u"PREMIUM_ACCOUNT_REQUIRED"_q) {
 		Settings::ShowPremium(&session(), "premium_stickers");
 	} else if (error == u"SCHEDULE_TOO_MUCH"_q) {
@@ -4486,6 +4492,13 @@ void ApiWrap::cancelLocalItem(not_null<HistoryItem*> item) {
 void ApiWrap::sendShortcutMessages(
 		not_null<PeerData*> peer,
 		BusinessShortcutId id) {
+	const auto error = _session->permissions().sendError(peer);
+	if (!error.isEmpty()) {
+		if (const auto show = ShowForPeer(peer)) {
+			show->showToast(error);
+		}
+		return;
+	}
 	auto ids = QVector<MTPint>();
 	auto randomIds = QVector<MTPlong>();
 	request(MTPmessages_SendQuickReplyMessages(
@@ -5072,7 +5085,14 @@ void ApiWrap::sendBotStart(
 		const QString &startTokenForChat) {
 	Expects(bot->isBot());
 
-	if (chat && chat->isChannel() && !chat->isMegagroup()) {
+	const auto target = chat ? chat : bot.get();
+	const auto error = _session->permissions().sendError(target);
+	if (!error.isEmpty()) {
+		if (show) {
+			show->showToast(error);
+		}
+		return;
+	} else if (chat && chat->isChannel() && !chat->isMegagroup()) {
 		ShowAddParticipantsError(show, "USER_BOT", chat, bot);
 		return;
 	}

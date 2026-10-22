@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_peer_values.h"
 
 #include "lang/lang_keys.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_user.h"
@@ -89,6 +90,17 @@ std::optional<QString> OnlineTextCommon(LastseenStatus status, TimeId now) {
 
 [[nodiscard]] int UniqueReactionsLimit(not_null<Main::AppConfig*> config) {
 	return config->get<int>("reactions_uniq_max", 11);
+}
+
+[[nodiscard]] rpl::producer<bool> WithSendPermission(
+		rpl::producer<bool> value,
+		not_null<PeerData*> peer) {
+	using namespace rpl::mappers;
+	const auto permissions = &peer->session().permissions();
+	auto allowed = permissions->value() | rpl::map([=] {
+		return permissions->canSendTo(peer);
+	});
+	return rpl::combine(std::move(value), std::move(allowed), _1 && _2);
 }
 
 } // namespace
@@ -173,8 +185,13 @@ inline auto DefaultRestrictionValue(
 	return SingleFlagValue(DefaultRestrictionsValue(chat), flag);
 }
 
+[[nodiscard]] rpl::producer<bool> CanSendAnyOfValueUnchecked(
+	not_null<PeerData*> peer,
+	ChatRestrictions rights,
+	bool forbidInForums);
+
 // Duplicated in CanSendAnyOf().
-[[nodiscard]] rpl::producer<bool> CanSendAnyOfValue(
+[[nodiscard]] rpl::producer<bool> CanSendAnyOfValueUnchecked(
 		not_null<Thread*> thread,
 		ChatRestrictions rights,
 		bool forbidInForums) {
@@ -212,11 +229,11 @@ inline auto DefaultRestrictionValue(
 				});
 		}
 	}
-	return CanSendAnyOfValue(thread->peer(), rights, forbidInForums);
+	return CanSendAnyOfValueUnchecked(thread->peer(), rights, forbidInForums);
 }
 
 // Duplicated in CanSendAnyOf().
-[[nodiscard]] rpl::producer<bool> CanSendAnyOfValue(
+[[nodiscard]] rpl::producer<bool> CanSendAnyOfValueUnchecked(
 		not_null<PeerData*> peer,
 		ChatRestrictions rights,
 		bool forbidInForums) {
@@ -315,6 +332,24 @@ inline auto DefaultRestrictionValue(
 			});
 	}
 	Unexpected("Peer type in Data::CanSendAnyOfValue.");
+}
+
+rpl::producer<bool> CanSendAnyOfValue(
+		not_null<Thread*> thread,
+		ChatRestrictions rights,
+		bool forbidInForums) {
+	return WithSendPermission(
+		CanSendAnyOfValueUnchecked(thread, rights, forbidInForums),
+		thread->peer());
+}
+
+rpl::producer<bool> CanSendAnyOfValue(
+		not_null<PeerData*> peer,
+		ChatRestrictions rights,
+		bool forbidInForums) {
+	return WithSendPermission(
+		CanSendAnyOfValueUnchecked(peer, rights, forbidInForums),
+		peer);
 }
 
 // This is duplicated in PeerData::canPinMessages().

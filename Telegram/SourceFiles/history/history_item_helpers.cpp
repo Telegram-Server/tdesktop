@@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "calls/calls_instance.h"
 #include "data/components/ephemeral_messages.h"
 #include "data/components/sponsored_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/stickers/data_custom_emoji.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_channel.h"
@@ -109,6 +110,10 @@ int ComputeSendingMessagesCount(
 Data::SendError GetErrorForSending(
 		not_null<PeerData*> peer,
 		SendingErrorRequest request) {
+	auto permissionError = peer->session().permissions().sendError(peer);
+	if (!permissionError.isEmpty()) {
+		return permissionError;
+	}
 	const auto forum = request.topicRootId ? peer->forum() : nullptr;
 	const auto topic = forum
 		? forum->topicFor(request.topicRootId)

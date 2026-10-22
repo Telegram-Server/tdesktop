@@ -79,6 +79,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/components/recent_inline_bots.h"
 #include "data/components/scheduled_messages.h"
 #include "data/components/sponsored_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/notify/data_notify_settings.h"
 #include "data/data_changes.h"
 #include "data/data_compose_stash.h"
@@ -948,6 +949,13 @@ HistoryWidget::HistoryWidget(
 					handlePeerUpdate();
 				}
 			}
+		}
+	}, lifetime());
+
+	session().permissions().changes(
+	) | rpl::on_next([=] {
+		if (_peer) {
+			handlePeerUpdate();
 		}
 	}, lifetime());
 

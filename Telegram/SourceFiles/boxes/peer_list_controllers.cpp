@@ -23,6 +23,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
 #include "main/main_session.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_peer_values.h"
 #include "data/data_saved_messages.h"
 #include "data/data_saved_sublist.h"
@@ -86,7 +87,8 @@ object_ptr<Ui::BoxContent> PrepareContactsBox(
 	protected:
 		std::unique_ptr<PeerListRow> createRow(
 				not_null<UserData*> user) override {
-			return !user->isSelf()
+			return (!user->isSelf()
+				&& user->session().permissions().inSendWhitelist(user))
 				? ContactsBoxController::createRow(user)
 				: nullptr;
 		}
