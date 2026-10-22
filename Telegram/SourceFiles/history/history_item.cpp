@@ -3368,7 +3368,10 @@ bool HistoryItem::allowsSendNow() const {
 }
 
 bool HistoryItem::allowsReschedule() const {
-	return allowsSendNow() && !awaitingVideoProcessing();
+	return allowsSendNow()
+		&& !awaitingVideoProcessing()
+		&& _history->session().permissions().allows(
+			Data::TelesrvAction::Edit);
 }
 
 bool HistoryItem::allowsForward() const {
@@ -3407,7 +3410,10 @@ bool HistoryItem::allowsEditMedia() const {
 }
 
 bool HistoryItem::canBeEdited() const {
-	if ((!isRegular()
+	using Action = Data::TelesrvAction;
+	if (!_history->session().permissions().allows(Action::Edit)) {
+		return false;
+	} else if ((!isRegular()
 			&& !isScheduled()
 			&& !isBusinessShortcut()
 			&& !isWelcomeTemplate())
