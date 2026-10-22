@@ -93,6 +93,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/components/recent_inline_bots.h"
 #include "data/components/scheduled_messages.h"
 #include "data/components/sponsored_messages.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_histories.h"
 #include "data/data_history_messages.h"
 #include "data/data_msg_id.h"
@@ -1504,6 +1505,16 @@ void ChatWidget::setupComposeControls() {
 			return Controls::WriteRestriction{
 				.type = Controls::WriteRestrictionType::Frozen,
 			};
+		}
+		if (const auto channel = _peer->asChannel()) {
+			if (!channel->amIn()
+				&& !channel->isMonoforum()
+				&& !session().permissions().canJoin(channel)) {
+				return Controls::WriteRestriction{
+					.text = tr::lng_telesrv_join_restricted(tr::now),
+					.type = Controls::WriteRestrictionType::Rights,
+				};
+			}
 		}
 		const auto allWithoutPolls = Data::AllSendRestrictions()
 			& ~ChatRestriction::SendPolls;

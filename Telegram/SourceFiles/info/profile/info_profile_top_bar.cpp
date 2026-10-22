@@ -26,6 +26,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/shortcuts.h"
 #include "data/components/recent_shared_media_gifts.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_birthday.h"
 #include "data/data_changes.h"
 #include "data/data_channel.h"
@@ -1011,16 +1012,19 @@ void TopBar::setupActions(not_null<Window::SessionController*> controller) {
 	}
 	const auto canJoin = (!sublist && !topic && channel && !channel->amIn());
 	if (canJoin) {
-		const auto join = Ui::CreateChild<TopBarActionButton>(
-			this,
-			tr::lng_profile_action_short_join(tr::now),
-			st::infoProfileTopBarActionJoin);
-		join->setClickedCallback([=] {
-			channel->session().api().joinChannel(channel);
-		});
-		join->setAccessibleName(tr::lng_profile_action_short_join(tr::now));
-		buttons.push_back(join);
-		_actions->add(join);
+		if (channel->session().permissions().canJoin(channel)) {
+			const auto join = Ui::CreateChild<TopBarActionButton>(
+				this,
+				tr::lng_profile_action_short_join(tr::now),
+				st::infoProfileTopBarActionJoin);
+			join->setClickedCallback([=] {
+				channel->session().api().joinChannel(channel);
+			});
+			join->setAccessibleName(
+				tr::lng_profile_action_short_join(tr::now));
+			buttons.push_back(join);
+			_actions->add(join);
+		}
 	} else if (const auto channel = peer->monoforumBroadcast()) {
 		const auto message = Ui::CreateChild<TopBarActionButton>(
 			this,
@@ -1221,7 +1225,11 @@ void TopBar::setupActions(not_null<Window::SessionController*> controller) {
 	if (chechMax()) {
 		return;
 	}
-	if (!canJoin && !topic && !sublist && (chat || channel)) {
+	if (!canJoin
+		&& !topic
+		&& !sublist
+		&& (chat || channel)
+		&& Window::CanDeleteChat(peer)) {
 		const auto leaveButton = Ui::CreateChild<TopBarActionButton>(
 			this,
 			tr::lng_profile_action_short_leave(tr::now),

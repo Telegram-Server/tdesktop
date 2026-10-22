@@ -36,6 +36,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/business/data_business_common.h"
 #include "data/business/data_business_info.h"
 #include "data/components/credits.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_changes.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
@@ -3149,10 +3150,18 @@ void ActionsFiller::addBlockAction(not_null<UserData*> user) {
 void ActionsFiller::addLeaveChannelAction(not_null<ChannelData*> channel) {
 	Expects(_controller->parentController());
 
+	using namespace rpl::mappers;
+	const auto permissions = &channel->session().permissions();
+	auto leaveAllowed = permissions->value() | rpl::map([=] {
+		return permissions->canLeave(channel);
+	});
 	AddActionButton(
 		_wrap,
 		tr::lng_profile_leave_channel(),
-		AmInChannelValue(channel),
+		rpl::combine(
+			AmInChannelValue(channel),
+			std::move(leaveAllowed),
+			_1 && _2),
 		Window::DeleteAndLeaveHandler(
 			_controller->parentController(),
 			channel),
@@ -3162,9 +3171,15 @@ void ActionsFiller::addLeaveChannelAction(not_null<ChannelData*> channel) {
 void ActionsFiller::addJoinChannelAction(
 		not_null<ChannelData*> channel) {
 	using namespace rpl::mappers;
-	auto joinVisible = AmInChannelValue(channel)
-		| rpl::map(!_1)
-		| rpl::start_spawning(_wrap->lifetime());
+	const auto permissions = &channel->session().permissions();
+	auto joinAllowed = permissions->value() | rpl::map([=] {
+		return permissions->canJoin(channel);
+	});
+	auto joinVisible = rpl::combine(
+		AmInChannelValue(channel),
+		std::move(joinAllowed),
+		!_1 && _2
+	) | rpl::start_spawning(_wrap->lifetime());
 	AddActionButton(
 		_wrap,
 		tr::lng_profile_join_channel(),

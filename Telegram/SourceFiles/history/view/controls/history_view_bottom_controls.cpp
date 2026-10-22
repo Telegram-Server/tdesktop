@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "apiwrap.h"
 #include "boxes/star_gift_box.h"
 #include "chat_helpers/message_field.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_changes.h"
 #include "data/data_channel.h"
 #include "data/data_chat_participant_status.h"
@@ -419,7 +420,8 @@ void BottomControls::setupPeerUpdates() {
 		_peer->session().data().notifySettings().defaultUpdates(
 			DefaultNotify::Group),
 		_peer->session().data().notifySettings().defaultUpdates(
-			DefaultNotify::Broadcast)
+			DefaultNotify::Broadcast),
+		_peer->session().permissions().changes()
 	) | rpl::on_next([=] {
 		refreshMuteUnmuteText();
 		updateControlsVisibility();
@@ -544,7 +546,9 @@ bool BottomControls::isJoinChannel() const {
 		return false;
 	}
 	if (const auto channel = _peer->asChannel()) {
-		return !channel->amIn() && !channel->isMonoforum();
+		return !channel->amIn()
+			&& !channel->isMonoforum()
+			&& channel->session().permissions().canJoin(channel);
 	}
 	return false;
 }
@@ -560,7 +564,9 @@ bool BottomControls::isJoinGroup() const {
 	const auto canSend = !channel->isForum()
 		? Data::CanSendAnything(channel)
 		: (_topic && Data::CanSendAnything(_topic));
-	return !channel->amIn() && !canSend;
+	return !channel->amIn()
+		&& !canSend
+		&& channel->session().permissions().canJoin(channel);
 }
 
 bool BottomControls::isMuteUnmute() const {

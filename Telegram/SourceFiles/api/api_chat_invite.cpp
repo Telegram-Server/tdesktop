@@ -12,6 +12,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/premium_limits_box.h"
 #include "core/application.h"
 #include "data/components/credits.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_file_origin.h"
 #include "data/data_forum.h"
@@ -117,6 +118,12 @@ void SubmitChatInvite(
 		not_null<Main::Session*> session,
 		const QString &hash,
 		bool isGroup) {
+	if (!session->permissions().canJoinByType(!isGroup)) {
+		if (const auto strong = weak.get()) {
+			strong->showToast(tr::lng_telesrv_join_restricted(tr::now));
+		}
+		return;
+	}
 	session->api().request(MTPmessages_ImportChatInvite(
 		MTP_string(hash)
 	)).done([=](const MTPmessages_ChatInviteJoinResult &result) {
@@ -625,6 +632,17 @@ void ConfirmInviteBox(
 		content->add(std::move(strip), style::margins());
 	}
 
+	if (!session->permissions().canJoinByType(isChannel)) {
+		box->addRow(
+			object_ptr<Ui::FlatLabel>(
+				box,
+				tr::lng_telesrv_join_restricted(tr::now),
+				st::confirmInviteStatus),
+			st::confirmInviteAboutRequestsPadding,
+			style::al_top);
+		box->addButton(tr::lng_cancel(), [=] { box->closeBox(); });
+		return;
+	}
 	box->addButton((requestApprove
 		? tr::lng_group_request_to_join()
 		: isChannel

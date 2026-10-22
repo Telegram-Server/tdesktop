@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "api/api_chat_filters.h"
 #include "apiwrap.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_chat_filters.h"
 #include "data/data_peer.h"
 #include "data/data_session.h"
@@ -28,6 +29,10 @@ void RemoveChatFilter(
 		FilterId filterId,
 		std::vector<not_null<PeerData*>> leave) {
 	const auto api = &session->api();
+	const auto permissions = &session->permissions();
+	leave.erase(ranges::remove_if(leave, [&](not_null<PeerData*> peer) {
+		return !permissions->canLeave(peer);
+	}), end(leave));
 	session->data().chatsFilters().apply(MTP_updateDialogFilter(
 		MTP_flags(MTPDupdateDialogFilter::Flag(0)),
 		MTP_int(filterId),

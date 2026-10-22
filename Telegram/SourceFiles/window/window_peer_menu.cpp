@@ -902,7 +902,11 @@ void Filler::addDeleteChat() {
 
 void Filler::addLeaveChat() {
 	const auto channel = _peer->asChannel();
-	if (_topic || _sublist || !channel || !channel->amIn()) {
+	if (_topic
+		|| _sublist
+		|| !channel
+		|| !channel->amIn()
+		|| !_peer->session().permissions().canLeave(_peer)) {
 		return;
 	}
 	_addAction({
@@ -917,7 +921,10 @@ void Filler::addLeaveChat() {
 
 void Filler::addJoinChat() {
 	const auto channel = _peer->asChannel();
-	if (_topic || !channel || channel->amIn()) {
+	if (_topic
+		|| !channel
+		|| channel->amIn()
+		|| !_peer->session().permissions().canJoin(_peer)) {
 		return;
 	}
 	const auto label = _peer->isMegagroup()

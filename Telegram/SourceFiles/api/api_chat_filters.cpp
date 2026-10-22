@@ -17,6 +17,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/core_settings.h"
 #include "core/ui_integration.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_chat_filters.h"
@@ -340,6 +341,14 @@ void ImportInvite(
 
 	const auto peer = peers.front();
 	const auto api = &peer->session().api();
+	const auto permissions = &peer->session().permissions();
+	const auto denied = ranges::any_of(peers, [&](not_null<PeerData*> p) {
+		return !permissions->canJoin(p);
+	});
+	if (denied) {
+		fail(u"TELESRV_PERMISSION_JOIN"_q);
+		return;
+	}
 	const auto callback = [=](const MTPUpdates &result) {
 		api->applyUpdates(result);
 		if (slug.isEmpty()) {
@@ -381,13 +390,20 @@ ToggleChatsController::ToggleChatsController(
 
 void ToggleChatsController::prepare() {
 	auto selected = base::flat_set<not_null<PeerData*>>();
-	const auto disabled = [](not_null<PeerData*> peer) {
-		return peer->isChat()
-			? peer->asChat()->isForbidden()
-			: peer->isChannel()
-			? (peer->asChannel()->isForbidden()
-				|| peer->asChannel()->isCommunity())
-			: false;
+	const auto permissions = &session().permissions();
+	const auto restricted = [=](not_null<PeerData*> peer) {
+		return (_action == ToggleAction::Adding)
+			? !permissions->canJoin(peer)
+			: !permissions->canLeave(peer);
+	};
+	const auto disabled = [=](not_null<PeerData*> peer) {
+		return restricted(peer)
+			|| (peer->isChat()
+				? peer->asChat()->isForbidden()
+				: peer->isChannel()
+				? (peer->asChannel()->isForbidden()
+					|| peer->asChannel()->isCommunity())
+				: false);
 	};
 	const auto add = [&](not_null<PeerData*> peer, bool additional = false) {
 		const auto disable = disabled(peer);
@@ -401,7 +417,9 @@ void ToggleChatsController::prepare() {
 			if (!additional && disable) {
 				return MakeFilterChatRow(
 					peer,
-					tr::lng_filters_link_inaccessible(tr::now),
+					(restricted(peer)
+						? Data::TelesrvPermissions::DeniedText()
+						: tr::lng_filters_link_inaccessible(tr::now)),
 					true);
 			} else if (previewable) {
 				return std::make_unique<PreviewableRow>(peer);
@@ -562,7 +580,9 @@ void ToggleChatsController::toggleAllSelected(bool select) {
 		for (auto i = 0; i != count; ++i) {
 			const auto row = delegate()->peerListRowAt(i);
 			const auto peer = row->peer();
-			if (_action != ToggleAction::Adding ||
+			if (!_checkable.contains(peer)) {
+				continue;
+			} else if (_action != ToggleAction::Adding ||
 				!ranges::contains(_additional, peer)) {
 				delegate()->peerListSetRowChecked(row, true);
 				selected.emplace(peer);
@@ -680,6 +700,8 @@ void ShowImportError(
 			? tr::lng_group_invite_bad_link(tr::now)
 			: error.startsWith(u"FLOOD_WAIT_"_q)
 			? tr::lng_flood_error(tr::now)
+			: error.startsWith(u"TELESRV_PERMISSION_"_q)
+			? Data::TelesrvPermissions::DeniedText()
 			: error);
 	}
 }

@@ -14,6 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/premium_preview_box.h"
 #include "core/application.h"
 #include "core/ui_integration.h"
+#include "data/components/telesrv_permissions.h"
 #include "data/data_chat_filters.h"
 #include "data/data_folder.h"
 #include "data/data_peer.h"
@@ -661,12 +662,18 @@ not_null<Ui::VerticalLayout*> SetupFoldersList(
 			const auto tl = removed
 				? MTPDialogFilter()
 				: row.filter.tl(newId);
+			const auto permissions = &session->permissions();
+			const auto canLeave = [=](not_null<PeerData*> peer) {
+				return permissions->canLeave(peer);
+			};
 			const auto removeChatlistWithChats = removed
 				&& row.filter.chatlist()
-				&& !row.removePeers.empty();
+				&& ranges::any_of(row.removePeers, canLeave);
 			if (removeChatlistWithChats) {
 				auto inputs = ranges::views::all(
 					row.removePeers
+				) | ranges::views::filter(
+					canLeave
 				) | ranges::views::transform([](not_null<PeerData*> peer) {
 					return MTPInputPeer(peer->input());
 				}) | ranges::to<QVector<MTPInputPeer>>();

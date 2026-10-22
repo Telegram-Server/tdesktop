@@ -1907,6 +1907,10 @@ void ApiWrap::joinChannel(not_null<ChannelData*> channel) {
 		session().changes().peerUpdated(
 			channel,
 			Data::PeerUpdate::Flag::ChannelAmIn);
+	} else if (!_session->permissions().canJoin(channel)) {
+		if (const auto show = ShowForPeer(channel)) {
+			show->showToast(tr::lng_telesrv_join_restricted(tr::now));
+		}
 	} else if (!_channelAmInRequests.contains(channel)) {
 		const auto requestId = request(MTPchannels_JoinChannel(
 			channel->inputChannel()
@@ -1970,6 +1974,8 @@ void ApiWrap::leaveChannel(not_null<ChannelData*> channel) {
 		session().changes().peerUpdated(
 			channel,
 			Data::PeerUpdate::Flag::ChannelAmIn);
+	} else if (!_session->permissions().canLeave(channel)) {
+		ShowPermissionDenied(channel);
 	} else if (!_channelAmInRequests.contains(channel)) {
 		auto requestId = request(MTPchannels_LeaveChannel(
 			channel->inputChannel()

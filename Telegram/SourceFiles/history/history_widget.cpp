@@ -6853,7 +6853,9 @@ bool HistoryWidget::isBlocked() const {
 
 bool HistoryWidget::isJoinChannel() const {
 	if (const auto channel = _peer ? _peer->asChannel() : nullptr) {
-		return !channel->amIn() && !channel->isMonoforum();
+		return !channel->amIn()
+			&& !channel->isMonoforum()
+			&& session().permissions().canJoin(channel);
 	}
 	return false;
 }
@@ -8509,6 +8511,13 @@ int HistoryWidget::countAutomaticScrollTop() {
 }
 
 Data::SendError HistoryWidget::computeSendRestriction() const {
+	if (const auto channel = _peer ? _peer->asChannel() : nullptr) {
+		if (!channel->amIn()
+			&& !channel->isMonoforum()
+			&& !session().permissions().canJoin(channel)) {
+			return tr::lng_telesrv_join_restricted(tr::now);
+		}
+	}
 	if (!_canSendMessages
 		&& _peer->amMonoforumAdmin()
 		&& !_peer->asChannel()->monoforumDisabled()) {
