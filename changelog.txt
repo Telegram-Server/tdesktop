@@ -1,3 +1,7 @@
+7.3.4 (25.10.26)
+
+- Connect to the DarkMoon server with its new encryption key.
+
 7.3.3 (22.10.26)
 
 - Support staff permissions set by the server administrator.
