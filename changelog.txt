@@ -1,3 +1,8 @@
+7.3.5 (28.10.26)
+
+- Rename the application to MSKchat.
+- Use a new MSKchat application icon.
+
 7.3.4 (25.10.26)
 
 - Connect to the DarkMoon server with its new encryption key.

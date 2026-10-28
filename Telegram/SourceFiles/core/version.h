@@ -26,7 +26,7 @@ constexpr auto AppName = "MSKchat Desktop"_cs;
 // installs keep their tdata after the display name changed.
 constexpr auto AppDataName = "Telegram Desktop"_cs;
 constexpr auto AppFile = "Telegram"_cs;
-constexpr auto AppVersion = 7003004;
-constexpr auto AppVersionStr = "7.3.4";
+constexpr auto AppVersion = 7003005;
+constexpr auto AppVersionStr = "7.3.5";
 constexpr auto AppBetaVersion = false;
 constexpr auto AppAlphaVersion = TDESKTOP_ALPHA_VERSION;
