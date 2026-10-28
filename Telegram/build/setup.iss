@@ -1,5 +1,7 @@
-#define MyAppShortName "Telegram"
-#define MyAppName "Telegram Desktop"
+#define MyAppShortName "MSKchat"
+#define MyAppName "MSKchat Desktop"
+; keep the old data/install folder so existing installs upgrade in place
+#define MyAppDataDir "Telegram Desktop"
 #define MyAppPublisher "Telegram FZ-LLC"
 #define MyAppURL "https://desktop.telegram.org"
 #define MyAppExeName "Telegram.exe"
@@ -18,7 +20,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={userappdata}\{#MyAppName}
+DefaultDirName={userappdata}\{#MyAppDataDir}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir={#ReleasePath}
@@ -104,16 +106,16 @@ Type: filesandordirs; Name: "{app}\tcache"
 Type: filesandordirs; Name: "{app}\tdumps"
 Type: filesandordirs; Name: "{app}\modules"
 Type: dirifempty; Name: "{app}"
-Type: files; Name: "{userappdata}\{#MyAppName}\data"
-Type: files; Name: "{userappdata}\{#MyAppName}\data_config"
-Type: files; Name: "{userappdata}\{#MyAppName}\log.txt"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\DebugLogs"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\tupdates"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\tdata"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\tcache"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\tdumps"
-Type: filesandordirs; Name: "{userappdata}\{#MyAppName}\modules"
-Type: dirifempty; Name: "{userappdata}\{#MyAppName}"
+Type: files; Name: "{userappdata}\{#MyAppDataDir}\data"
+Type: files; Name: "{userappdata}\{#MyAppDataDir}\data_config"
+Type: files; Name: "{userappdata}\{#MyAppDataDir}\log.txt"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\DebugLogs"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\tupdates"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\tdata"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\tcache"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\tdumps"
+Type: filesandordirs; Name: "{userappdata}\{#MyAppDataDir}\modules"
+Type: dirifempty; Name: "{userappdata}\{#MyAppDataDir}"
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
